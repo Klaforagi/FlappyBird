@@ -27,3 +27,10 @@ end
 for _, brick in ipairs(killbricks) do
 	brick.Touched:Connect(onBrickTouched)
 end
+
+-- Handle dynamically added killbricks
+workspace.KillBricks.DescendantAdded:Connect(function(obj)
+	if obj:IsA("BasePart") and obj.Name == "KillBrick" then
+		obj.Touched:Connect(onBrickTouched)
+	end
+end)

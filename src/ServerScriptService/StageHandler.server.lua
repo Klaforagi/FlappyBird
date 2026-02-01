@@ -17,7 +17,8 @@ local function getAllStages(parent)
 	return stages
 end
 
-local stages = getAllStages(workspace:WaitForChild("Stages")) -- (Folder in workspace can stay named "Checkpoints" or rename to "Stages" if you want)
+local stages = getAllStages(workspace:WaitForChild("Stages"))
+print("[StageHandler] Found " .. #stages .. " stage parts")
 
 local function isAliveCharacter(part)
 	local character = part.Parent
@@ -38,13 +39,17 @@ local function onStageTouched(otherPart, stagePart)
 	if not player then return end
 
 	local stageValue = stagePart:GetAttribute("Value")
-	if not stageValue then return end
+	if not stageValue then 
+		warn("[StageHandler] Stage part", stagePart.Name, "has no Value attribute!")
+		return 
+	end
 
 	local stage = player.leaderstats:FindFirstChild("Stage")
 	local highScore = player.leaderstats:FindFirstChild("HighScore")
 	if not (stage and highScore) then return end
 
-
+	print("[StageHandler]", player.Name, "touched stage", stageValue)
+	
 	-- Update current stage
 	stage.Value = stageValue
 
@@ -84,26 +89,7 @@ Players.PlayerAdded:Connect(function(player)
 		highScore.Value = storedHigh
 	end
 
-	player.CharacterAdded:Connect(function(char)
-		-- Use checkpoint script's logic to get the correct checkpoint value
-		local checkpointsFolder = workspace:FindFirstChild("Checkpoints")
-		local stage = player.leaderstats:FindFirstChild("Stage")
-		if not (checkpointsFolder and stage) then return end
-
-		-- Find the highest checkpoint <= previous Stage value
-		local stageValue = stage.Value
-		local best = 0
-		for _, part in ipairs(checkpointsFolder:GetChildren()) do
-			if part:IsA("BasePart") then
-				local v = part:GetAttribute("Value")
-				if v and v > best and v <= stageValue then
-					best = v
-				end
-			end
-		end
-		-- Set Stage to the nearest checkpoint value
-		stage.Value = best
-	end)
+	-- CharacterAdded no longer resets Stage - CheckpointHandler handles respawn positioning
 end)
 
 Players.PlayerRemoving:Connect(function(player)

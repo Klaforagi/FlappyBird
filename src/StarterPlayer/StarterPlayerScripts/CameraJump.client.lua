@@ -78,55 +78,26 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 		cam.CameraType = Enum.CameraType.Custom
 	end)
 
-	local function enableFlappy()
-		player.CameraMode = Enum.CameraMode.Classic
-		cam.CameraType = Enum.CameraType.Custom
-		cam.CameraSubject = hrp
-		task.wait()
-		cam.CameraType = Enum.CameraType.Scriptable
-		cam.FieldOfView = 60
-		player.CameraMinZoomDistance = 5
-		player.CameraMaxZoomDistance = 5
+	-- Always enable flappy camera (permanent side-view)
+	player.CameraMode = Enum.CameraMode.Classic
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.FieldOfView = 60
+	player.CameraMinZoomDistance = 5
+	player.CameraMaxZoomDistance = 5
 
-		if not renderConn then
-			renderConn = RunService.RenderStepped:Connect(function()
-				cam.CFrame = CFrame.new(Vector3.new(hrp.Position.X, 5, hrp.Position.Z + 35), Vector3.new(hrp.Position.X + 0.1, 5, hrp.Position.Z))
-			end)
-		end
-		print("Flappy camera enabled.")
-	end
-
-	local function disableFlappy()
-		cam.CameraType = Enum.CameraType.Custom
-		cam.FieldOfView = 70
-		player.CameraMinZoomDistance = 0.5
-		player.CameraMaxZoomDistance = 25
-		if renderConn then
-			renderConn:Disconnect()
-			renderConn = nil
-		end
-		print("Flappy camera disabled.")
-	end
-
-	-- Controls (disable in flappy mode, enable in lobby)
-	flappyMode.Changed:Connect(function(isFlappy)
-		if isFlappy then
-			controls:Disable()
-			enableFlappy()
-		else
-			controls:Enable()
-			disableFlappy()
-		end
+	renderConn = RunService.RenderStepped:Connect(function()
+		cam.CFrame = CFrame.new(Vector3.new(hrp.Position.X, 5, hrp.Position.Z + 35), Vector3.new(hrp.Position.X + 0.1, 5, hrp.Position.Z))
 	end)
+	print("Flappy camera enabled permanently.")
 
-	-- Jump input ONLY in flappy mode
+	-- Always disable default controls (PlayerMovement handles everything)
+	controls:Disable()
+	
+	-- Jump with spacebar (only in FlappyMode - normal mode uses PlayerMovement)
 	local UIS = game:GetService("UserInputService")
 	UIS.InputBegan:Connect(function(input, processed)
 		if flappyMode.Value and input.KeyCode == Enum.KeyCode.Space and not processed then
-			if humanoid:GetState() == Enum.HumanoidStateType.Running or humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-				print("Jumped in FlappyMode!")
-			end
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		end
 	end)
 end

@@ -31,11 +31,8 @@ local function connectZoneDetection(char)
 		flappy.Value = false
 	end
 
-	runService.RenderStepped:Connect(function()
-		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if not hrp then return end
-
-		-- Get all current StartZones/BreakZones every frame (handles streaming, respawn, dynamic parts)
+	-- Cache zones once instead of every frame
+	local function getZones()
 		local startZones, breakZones = {}, {}
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj:IsA("BasePart") and obj.Name == "StartZone" then
@@ -44,6 +41,37 @@ local function connectZoneDetection(char)
 				table.insert(breakZones, obj)
 			end
 		end
+		return startZones, breakZones
+	end
+
+	local startZones, breakZones = getZones()
+
+	-- Update cache if new zones are added
+	workspace.DescendantAdded:Connect(function(obj)
+		if obj:IsA("BasePart") then
+			if obj.Name == "StartZone" then
+				table.insert(startZones, obj)
+			elseif obj.Name == "BreakZone" then
+				table.insert(breakZones, obj)
+			end
+		end
+	end)
+
+	workspace.DescendantRemoving:Connect(function(obj)
+		if obj:IsA("BasePart") then
+			if obj.Name == "StartZone" then
+				local idx = table.find(startZones, obj)
+				if idx then table.remove(startZones, idx) end
+			elseif obj.Name == "BreakZone" then
+				local idx = table.find(breakZones, obj)
+				if idx then table.remove(breakZones, idx) end
+			end
+		end
+	end)
+
+	runService.RenderStepped:Connect(function()
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
 
 		local pos = hrp.Position
 
