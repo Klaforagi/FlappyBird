@@ -56,6 +56,18 @@ local function createGui()
 	screenGui.Name = "MusicGui"
 	screenGui.Parent = player:WaitForChild("PlayerGui")
 	screenGui.IgnoreGuiInset = false -- Change to true if you want to ignore Roblox's top bar
+	screenGui.Enabled = false -- Start hidden until menu closes
+	
+	-- Hide/show based on main menu state
+	task.spawn(function()
+		local inMainMenu = player:WaitForChild("InMainMenu", 10)
+		if inMainMenu then
+			screenGui.Enabled = not inMainMenu.Value
+			inMainMenu.Changed:Connect(function()
+				screenGui.Enabled = not inMainMenu.Value
+			end)
+		end
+	end)
 
 	pauseButton = Instance.new("TextButton")
 	pauseButton.Name = "PauseButton"

@@ -3,7 +3,19 @@ local player = game.Players.LocalPlayer
 local stageGui = Instance.new("ScreenGui")
 stageGui.Name = "StageGui"
 stageGui.ResetOnSpawn = false
+stageGui.Enabled = false -- Start hidden until menu closes
 stageGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Hide/show based on main menu state
+task.spawn(function()
+	local inMainMenu = player:WaitForChild("InMainMenu", 10)
+	if inMainMenu then
+		stageGui.Enabled = not inMainMenu.Value
+		inMainMenu.Changed:Connect(function()
+			stageGui.Enabled = not inMainMenu.Value
+		end)
+	end
+end)
 
 local stageLabel = Instance.new("TextLabel")
 stageLabel.Name = "StageLabel"

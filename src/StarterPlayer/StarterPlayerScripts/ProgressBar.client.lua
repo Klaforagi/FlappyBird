@@ -18,7 +18,19 @@ local progressGui = Instance.new("ScreenGui")
 progressGui.Name = "ProgressBarGui"
 progressGui.ResetOnSpawn = false
 progressGui.DisplayOrder = 5
+progressGui.Enabled = false -- Start hidden until menu closes
 progressGui.Parent = playerGui
+
+-- Hide/show based on main menu state
+task.spawn(function()
+	local inMainMenu = LocalPlayer:WaitForChild("InMainMenu", 10)
+	if inMainMenu then
+		progressGui.Enabled = not inMainMenu.Value
+		inMainMenu.Changed:Connect(function()
+			progressGui.Enabled = not inMainMenu.Value
+		end)
+	end
+end)
 
 -- Main container at bottom
 local container = Instance.new("Frame")
