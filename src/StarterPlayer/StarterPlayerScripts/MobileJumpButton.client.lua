@@ -1,9 +1,16 @@
 local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
 
-player.CharacterAdded:Connect(function(char)
+-- Only run on mobile
+if not UIS.TouchEnabled then
+	return
+end
+
+print("MobileJumpButton: Running on mobile device")
+
+local function setupCharacter(char)
 	local humanoid = char:WaitForChild("Humanoid")
 	local flappyMode = char:WaitForChild("FlappyMode")
-	local UIS = game:GetService("UserInputService")
 
 	-- Cooldown setup
 	local lastJumpTime = 0
@@ -11,38 +18,39 @@ player.CharacterAdded:Connect(function(char)
 
 	local function onTap()
 		local now = tick()
-		if flappyMode.Value and (now - lastJumpTime > jumpCooldown) then
-			if humanoid:GetState() == Enum.HumanoidStateType.Running or humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-				lastJumpTime = now
+		if now - lastJumpTime > jumpCooldown then
+			-- In flappy mode, always allow jump (tap to flap)
+			if flappyMode.Value then
+				local state = humanoid:GetState()
+				if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.Freefall then
+					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+					lastJumpTime = now
+				end
 			end
+			-- In manual mode, Roblox's default jump button handles jumping
 		end
 	end
 
-	-- Tap connection management
-	local tapConn
-	flappyMode.Changed:Connect(function(isFlappy)
-		if UIS.TouchEnabled then
-			if isFlappy then
-				lastJumpTime = 0 -- reset on FlappyMode start
-				tapConn = UIS.TouchTap:Connect(function(touchPositions, processed)
-					if not processed then
-						onTap()
-					end
-				end)
-			elseif tapConn then
-				tapConn:Disconnect()
-				tapConn = nil
-			end
+	-- Always listen for taps on mobile (for flappy mode jumping)
+	local tapConn = UIS.TouchTap:Connect(function(touchPositions, processed)
+		-- Only process if not already handled by UI
+		if not processed then
+			onTap()
 		end
 	end)
+	
+	-- Clean up when character dies
+	humanoid.Died:Connect(function()
+		if tapConn then
+			tapConn:Disconnect()
+		end
+	end)
+end
 
-	-- Handle if already in FlappyMode on spawn
-	if UIS.TouchEnabled and flappyMode.Value then
-		tapConn = UIS.TouchTap:Connect(function(touchPositions, processed)
-			if not processed then
-				onTap()
-			end
-		end)
-	end
-end)
+-- Handle current character if it exists
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+-- Handle future characters
+player.CharacterAdded:Connect(setupCharacter)

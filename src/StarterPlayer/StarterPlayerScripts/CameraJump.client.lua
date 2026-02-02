@@ -108,8 +108,20 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 		end
 	end)
 
-	-- Always disable default controls
-	controls:Disable()
+	-- Enable/disable controls based on flappy mode
+	local function updateControls()
+		if flappyMode.Value then
+			controls:Disable() -- Disable in flappy mode (we handle movement ourselves)
+		else
+			controls:Enable() -- Enable Roblox default controls in manual mode
+		end
+	end
+	
+	-- Listen for flappy mode changes
+	flappyMode.Changed:Connect(updateControls)
+	
+	-- Set initial state
+	updateControls()
 	
 	-- Jump with spacebar (only in FlappyMode)
 	local UIS = game:GetService("UserInputService")
