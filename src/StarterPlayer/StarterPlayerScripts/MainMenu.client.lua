@@ -12,17 +12,25 @@ local Camera = workspace.CurrentCamera
 local PlayEvent = ReplicatedStorage:WaitForChild("PlayEvent")
 
 local menuOpen = true
-local isLoading = true
 
 -- Static camera position from Studio
-local CAMERA_POSITION = Vector3.new(-187.951, 6.347, -123.057)
-local CAMERA_ORIENTATION = Vector3.new(-9.931, -28.403, 0) -- pitch, yaw, roll in degrees
+local CAMERA_START_POS = Vector3.new(-187.951, 6.347, -123.057)
+local CAMERA_START_ORIENTATION = Vector3.new(-9.931, -28.403, 0) -- pitch, yaw, roll in degrees
+
+local CAMERA_END_POS = Vector3.new(-140.577, 4.46, -122.969)
+local CAMERA_END_ORIENTATION = Vector3.new(-4.232, -36.002, 0)
+
 local CAMERA_FOV = 70
+
+-- Panning settings
+local PAN_DURATION = 10 -- seconds to reach end point
+local FADE_DURATION = 0.5
+local FADE_OPACITY = 0 -- fully black
 
 -- Positions to stream in for full map visibility (grid covering visible area)
 local STREAM_POSITIONS = {
-	CAMERA_POSITION,
-	CAMERA_LOOK_AT,
+	CAMERA_START_POS,
+	CAMERA_END_POS,
 	-- Grid of positions to load more of the map
 	Vector3.new(-200, 10, -160),
 	Vector3.new(-200, 10, -140),
@@ -43,54 +51,20 @@ local STREAM_POSITIONS = {
 
 -- Forward declare
 local mainMenu
-local loadingScreen
 local cameraConnection = nil
+local fadeOverlay = nil
 
--- Build the camera CFrame using position and orientation
-local function getMenuCameraCFrame()
-	local pitch = math.rad(CAMERA_ORIENTATION.X)
-	local yaw = math.rad(CAMERA_ORIENTATION.Y)
-	local roll = math.rad(CAMERA_ORIENTATION.Z)
-	return CFrame.new(CAMERA_POSITION) * CFrame.Angles(pitch, yaw, roll)
-end
-
--- Create loading screen
-local function createLoadingScreen()
-	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "LoadingScreen"
-	screenGui.ResetOnSpawn = false
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.DisplayOrder = 200 -- Above main menu
-	screenGui.IgnoreGuiInset = true
-	screenGui.Enabled = true
-	
-	local background = Instance.new("Frame")
-	background.Name = "Background"
-	background.Size = UDim2.new(1, 0, 1, 0)
-	background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	background.BorderSizePixel = 0
-	background.Parent = screenGui
-	
-	local loadingText = Instance.new("TextLabel")
-	loadingText.Name = "LoadingText"
-	loadingText.Size = UDim2.new(0.5, 0, 0.1, 0)
-	loadingText.Position = UDim2.new(0.5, 0, 0.5, 0)
-	loadingText.AnchorPoint = Vector2.new(0.5, 0.5)
-	loadingText.BackgroundTransparency = 1
-	loadingText.Text = "Loading..."
-	loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	loadingText.Font = Enum.Font.FredokaOne
-	loadingText.TextScaled = true
-	loadingText.Parent = background
-	
-	local textStroke = Instance.new("UIStroke")
-	textStroke.Color = Color3.fromRGB(50, 100, 150)
-	textStroke.Thickness = 2
-	textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-	textStroke.Parent = loadingText
-	
-	screenGui.Parent = PlayerGui
-	return screenGui, background
+-- Build the camera CFrame by interpolating between start and end
+local function getMenuCameraCFrame(alpha)
+	alpha = alpha or 0
+	-- Lerp position
+	local pos = CAMERA_START_POS:Lerp(CAMERA_END_POS, alpha)
+	-- Lerp orientation
+	local orientation = CAMERA_START_ORIENTATION:Lerp(CAMERA_END_ORIENTATION, alpha)
+	local pitch = math.rad(orientation.X)
+	local yaw = math.rad(orientation.Y)
+	local roll = math.rad(orientation.Z)
+	return CFrame.new(pos) * CFrame.Angles(pitch, yaw, roll)
 end
 
 -- Wait for streaming to complete
@@ -111,23 +85,73 @@ local function waitForStreaming()
 	ContentProvider:PreloadAsync(workspace:GetDescendants())
 end
 
--- Start menu camera system
+-- Fade to black, then immediately fade back in and reset camera
+local function doFadeTransition(resetCallback)
+	if not fadeOverlay then return end
+	
+	-- Fade to black
+	local fadeOut = TweenService:Create(fadeOverlay, TweenInfo.new(FADE_DURATION), {BackgroundTransparency = 0})
+	fadeOut:Play()
+	fadeOut.Completed:Connect(function()
+		-- Reset camera position
+		if resetCallback then
+			resetCallback()
+		end
+		-- Immediately fade back in
+		local fadeIn = TweenService:Create(fadeOverlay, TweenInfo.new(FADE_DURATION), {BackgroundTransparency = 1})
+		fadeIn:Play()
+	end)
+end
+
+-- Initial fade in from black
+local function initialFadeIn()
+	if not fadeOverlay then return end
+	local tween = TweenService:Create(fadeOverlay, TweenInfo.new(FADE_DURATION), {BackgroundTransparency = 1})
+	tween:Play()
+end
+
+-- Start menu camera system with panning
 local function startMenuCamera()
 	Camera.CameraType = Enum.CameraType.Scriptable
 	Camera.FieldOfView = CAMERA_FOV
 	
-	local menuCFrame = getMenuCameraCFrame()
-	Camera.CFrame = menuCFrame
+	local startTime = tick()
+	local hasFadedOut = false
+	local needsFadeIn = true
 	
-	-- Lock camera every frame to prevent Roblox from overriding
+	Camera.CFrame = getMenuCameraCFrame(0)
+	
+	-- Lock camera every frame and pan
 	if cameraConnection then
 		cameraConnection:Disconnect()
 	end
-	cameraConnection = RunService.RenderStepped:Connect(function()
+	cameraConnection = RunService.RenderStepped:Connect(function(dt)
 		if menuOpen then
 			Camera.CameraType = Enum.CameraType.Scriptable
 			Camera.FieldOfView = CAMERA_FOV
-			Camera.CFrame = menuCFrame
+			
+			-- Calculate pan progress (0 to 1 over PAN_DURATION)
+			local elapsed = tick() - startTime
+			local alpha = math.min(elapsed / PAN_DURATION, 1)
+			
+			-- Initial fade in at the very start
+			if needsFadeIn and fadeOverlay then
+				needsFadeIn = false
+				initialFadeIn()
+			end
+			
+			-- Start fade transition near end of cycle (at 90%)
+			if alpha >= 0.9 and not hasFadedOut then
+				hasFadedOut = true
+				doFadeTransition(function()
+					-- Reset when screen is fully black
+					startTime = tick()
+					hasFadedOut = false
+					Camera.CFrame = getMenuCameraCFrame(0)
+				end)
+			end
+			
+			Camera.CFrame = getMenuCameraCFrame(alpha)
 		end
 	end)
 end
@@ -159,6 +183,16 @@ local function createMainMenu()
 	background.BackgroundTransparency = 1
 	background.BorderSizePixel = 0
 	background.Parent = screenGui
+	
+	-- Fade overlay for transitions (starts black for initial fade-in)
+	fadeOverlay = Instance.new("Frame")
+	fadeOverlay.Name = "FadeOverlay"
+	fadeOverlay.Size = UDim2.new(1, 0, 1, 0)
+	fadeOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	fadeOverlay.BackgroundTransparency = 0 -- Start fully black
+	fadeOverlay.BorderSizePixel = 0
+	fadeOverlay.ZIndex = 10
+	fadeOverlay.Parent = screenGui
 	
 	-- Title
 	local title = Instance.new("TextLabel")
@@ -249,10 +283,21 @@ local function createMainMenu()
 	
 	-- Spectate button action (spectate without spawning)
 	spectateButton.MouseButton1Click:Connect(function()
-		menuOpen = false
-		screenGui.Enabled = false
-		stopMenuCamera()
-		-- Don't fire any event - just close menu and let them spectate
+		-- Check if there are other players to spectate
+		local otherPlayers = {}
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and player.Character then
+				table.insert(otherPlayers, player)
+			end
+		end
+		
+		-- Only proceed if there are players to spectate
+		if #otherPlayers > 0 then
+			menuOpen = false
+			screenGui.Enabled = false
+			stopMenuCamera()
+		end
+		-- If no players, do nothing (button just doesn't work)
 	end)
 	
 	-- Options button action (placeholder)
@@ -264,29 +309,16 @@ local function createMainMenu()
 	return screenGui
 end
 
--- Create loading screen first (hidden behind black screen while loading)
-loadingScreen = createLoadingScreen()
-
--- Set up camera immediately so streaming happens at the right location
-startMenuCamera()
-
--- Wait for map to stream in
-waitForStreaming()
-
--- Create the menu (but keep it hidden initially)
-mainMenu = createMainMenu()
-mainMenu.Enabled = false
-
--- Fade out loading screen and show main menu
-local loadingBg = loadingScreen:FindFirstChild("Background")
-if loadingBg then
-	local fadeOut = TweenService:Create(loadingBg, TweenInfo.new(0.5), {BackgroundTransparency = 1})
-	fadeOut:Play()
-	fadeOut.Completed:Wait()
+-- Wait for game to load
+if not game:IsLoaded() then
+	game.Loaded:Wait()
 end
-loadingScreen:Destroy()
-mainMenu.Enabled = true
-isLoading = false
+
+-- Create and show the menu
+mainMenu = createMainMenu()
+
+-- Start camera panning
+startMenuCamera()
 
 -- Store globally so other scripts can access it
 local menuValue = Instance.new("BoolValue")
