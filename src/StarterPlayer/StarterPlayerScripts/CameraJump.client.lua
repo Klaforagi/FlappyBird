@@ -85,7 +85,12 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 	player.CameraMinZoomDistance = 5
 	player.CameraMaxZoomDistance = 5
 
+	-- Check for spectating value
+	local isSpectating = player:FindFirstChild("IsSpectating")
+
 	renderConn = RunService.RenderStepped:Connect(function()
+		-- Don't update camera if spectating (Spectate script handles it)
+		if isSpectating and isSpectating.Value then return end
 		cam.CFrame = CFrame.new(Vector3.new(hrp.Position.X, 5, hrp.Position.Z + 35), Vector3.new(hrp.Position.X + 0.1, 5, hrp.Position.Z))
 	end)
 	print("Flappy camera enabled permanently.")

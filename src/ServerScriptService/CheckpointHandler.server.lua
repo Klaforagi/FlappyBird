@@ -40,6 +40,10 @@ Players.PlayerAdded:Connect(function(player)
 		local checkpointData = getRespawnCheckpoint(currentStage, checkpointParts)
 		if checkpointData and hrp then
 			hrp.CFrame = checkpointData.Part.CFrame + Vector3.new(0, 4, 0)
+			-- Set Stage value to checkpoint value after respawn
+			if stageVal then
+				stageVal.Value = checkpointData.Value
+			end
 		end
 	end)
 end)
