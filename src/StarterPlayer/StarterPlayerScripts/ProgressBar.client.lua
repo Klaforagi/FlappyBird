@@ -33,32 +33,45 @@ barBackground.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
 barBackground.AnchorPoint = Vector2.new(0, 0)
 barBackground.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 barBackground.BorderSizePixel = 0
+barBackground.ClipsDescendants = true
 barBackground.Parent = container
 
 local barCorner = Instance.new("UICorner")
 barCorner.CornerRadius = UDim.new(0, 6)
 barCorner.Parent = barBackground
 
--- Progress bar fill (for local player)
-local barFill = Instance.new("Frame")
-barFill.Name = "BarFill"
-barFill.Size = UDim2.new(0, 0, 1, 0)
-barFill.Position = UDim2.new(0, 0, 0, 0)
-barFill.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-barFill.BorderSizePixel = 0
-barFill.Parent = barBackground
+-- Colored segments (10 segments of 50 stages each)
+local segmentColors = {
+	Color3.fromRGB(0, 200, 100),   -- 0-50: green
+	Color3.fromRGB(50, 150, 255),  -- 50-100: blue
+	Color3.fromRGB(255, 100, 200), -- 100-150: pink
+	Color3.fromRGB(40, 40, 40),    -- 150-200: black
+	Color3.fromRGB(40, 40, 40),    -- 200-250: black
+	Color3.fromRGB(40, 40, 40),    -- 250-300: black
+	Color3.fromRGB(40, 40, 40),    -- 300-350: black
+	Color3.fromRGB(40, 40, 40),    -- 350-400: black
+	Color3.fromRGB(40, 40, 40),    -- 400-450: black
+	Color3.fromRGB(40, 40, 40),    -- 450-500: black
+}
 
-local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(0, 6)
-fillCorner.Parent = barFill
+for i = 1, 10 do
+	local segment = Instance.new("Frame")
+	segment.Name = "Segment" .. i
+	segment.Size = UDim2.new(0.1, 0, 1, 0)
+	segment.Position = UDim2.new((i - 1) * 0.1, 0, 0, 0)
+	segment.BackgroundColor3 = segmentColors[i]
+	segment.BorderSizePixel = 0
+	segment.Parent = barBackground
+end
 
--- Stage markers (0, 100, 200, 300, 400, 500)
-for i = 0, 5 do
+-- Stage markers every 50 (0, 50, 100, ..., 500)
+for i = 0, 10 do
+	local stageNum = i * 50
 	local marker = Instance.new("Frame")
-	marker.Name = "Marker" .. (i * 100)
+	marker.Name = "Marker" .. stageNum
 	marker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
-	marker.Position = UDim2.new(i / 5, -1, 1, -BAR_HEIGHT - 4)
-	marker.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	marker.Position = UDim2.new(i / 10, -1, 1, -BAR_HEIGHT - 4)
+	marker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
 	marker.BorderSizePixel = 0
 	marker.Parent = container
 	
@@ -68,9 +81,9 @@ for i = 0, 5 do
 	label.AnchorPoint = Vector2.new(0.5, 0)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.fromRGB(200, 200, 200)
-	label.TextSize = 12
+	label.TextSize = 10
 	label.Font = Enum.Font.SourceSansBold
-	label.Text = tostring(i * 100)
+	label.Text = tostring(stageNum)
 	label.Parent = marker
 end
 
@@ -246,17 +259,6 @@ local function updatePositions()
 			0.3,
 			true
 		)
-		
-		-- Update local player's bar fill
-		if player == LocalPlayer then
-			barFill:TweenSize(
-				UDim2.new(xPos, 0, 1, 0),
-				Enum.EasingDirection.Out,
-				Enum.EasingStyle.Quad,
-				0.3,
-				true
-			)
-		end
 	end
 end
 
