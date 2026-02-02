@@ -4,10 +4,27 @@ local RunService = game:GetService("RunService")
 
 local TOTAL_STAGES = 500
 local STAGES_PER_ZONE = 50
-local ICON_SIZE = 32
-local BAR_HEIGHT = 12
-local LANE_HEIGHT = 36
+-- Base sizes (designed for 1080p, will scale with screen)
+local BASE_SCREEN_HEIGHT = 1080
+local BASE_ICON_SIZE = 32
+local BASE_BAR_HEIGHT = 12
+local BASE_LANE_HEIGHT = 36
 local MAX_LANES = 4
+
+-- Dynamic sizes (computed from screen size)
+local ICON_SIZE = BASE_ICON_SIZE
+local BAR_HEIGHT = BASE_BAR_HEIGHT
+local LANE_HEIGHT = BASE_LANE_HEIGHT
+
+-- Function to update sizes based on screen
+local function updateSizes()
+	local screenSize = workspace.CurrentCamera.ViewportSize
+	local scale = screenSize.Y / BASE_SCREEN_HEIGHT
+	ICON_SIZE = math.floor(BASE_ICON_SIZE * scale)
+	BAR_HEIGHT = math.floor(BASE_BAR_HEIGHT * scale)
+	LANE_HEIGHT = math.floor(BASE_LANE_HEIGHT * scale)
+end
+updateSizes()
 
 -- Mode: "global" shows all 500 stages, "local" shows current zone only
 local viewMode = "global"
@@ -105,6 +122,29 @@ iconsContainer.Parent = container
 -- Store player icons and data
 local playerIcons = {}
 local playerLanes = {}
+
+-- Function to resize container and children when screen changes
+local function resizeUI()
+	updateSizes()
+	container.Size = UDim2.new(0.8, 0, 0, LANE_HEIGHT * MAX_LANES + BAR_HEIGHT + 20)
+	clickArea.Size = UDim2.new(1, 0, 0, BAR_HEIGHT + 30)
+	clickArea.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - 15)
+	barBackground.Size = UDim2.new(1, 0, 0, BAR_HEIGHT)
+	barBackground.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
+	markersContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
+	iconsContainer.Size = UDim2.new(1, 0, 0, LANE_HEIGHT * MAX_LANES)
+	iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES - 5)
+	
+	-- Resize all player icons
+	for _, icon in pairs(playerIcons) do
+		icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
+		local nameLabel = icon:FindFirstChild("NameLabel")
+		if nameLabel then
+			nameLabel.Size = UDim2.new(0, ICON_SIZE * 1.875, 0, ICON_SIZE * 0.44)
+			nameLabel.TextSize = math.floor(11 * (ICON_SIZE / BASE_ICON_SIZE))
+		end
+	end
+end
 
 -- Get local player's current zone (0-9)
 local function getLocalPlayerZone()
@@ -322,12 +362,12 @@ local function createPlayerIcon(player)
 	-- Name label below icon
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "NameLabel"
-	nameLabel.Size = UDim2.new(0, 60, 0, 14)
+	nameLabel.Size = UDim2.new(0, ICON_SIZE * 1.875, 0, ICON_SIZE * 0.44)
 	nameLabel.Position = UDim2.new(0.5, 0, 1, 2)
 	nameLabel.AnchorPoint = Vector2.new(0.5, 0)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.TextColor3 = player == LocalPlayer and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(255, 255, 255)
-	nameLabel.TextSize = 11
+	nameLabel.TextSize = math.floor(11 * (ICON_SIZE / BASE_ICON_SIZE))
 	nameLabel.Font = Enum.Font.SourceSansBold
 	nameLabel.Text = player.DisplayName
 	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -551,4 +591,10 @@ task.spawn(function()
 		end
 		updatePositions()
 	end
+end)
+
+-- Listen for screen size changes and resize UI
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+	resizeUI()
+	rebuildUI()
 end)

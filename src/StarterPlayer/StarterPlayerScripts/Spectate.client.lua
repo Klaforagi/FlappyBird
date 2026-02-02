@@ -33,47 +33,11 @@ task.spawn(function()
 	end
 end)
 
--- Menu button - positioned above spectate button
-local menuButton = Instance.new("TextButton")
-menuButton.Name = "MenuButton"
-menuButton.Size = UDim2.new(0.13, 0, 0.08, 0)
-menuButton.Position = UDim2.new(0.02, 0, 0.50, 0)
-menuButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
-menuButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-menuButton.Text = "Menu"
-menuButton.Font = Enum.Font.FredokaOne
-menuButton.TextScaled = true
-menuButton.Parent = spectateGui
-local menuCorner = Instance.new("UICorner")
-menuCorner.CornerRadius = UDim.new(0.25, 0)
-menuCorner.Parent = menuButton
-local menuStroke = Instance.new("UIStroke")
-menuStroke.Color = Color3.fromRGB(50, 100, 150)
-menuStroke.Thickness = 3
-menuStroke.Parent = menuButton
-local menuTextStroke = Instance.new("UIStroke")
-menuTextStroke.Color = Color3.fromRGB(50, 100, 150)
-menuTextStroke.Thickness = 1.5
-menuTextStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-menuTextStroke.Parent = menuButton
-local menuGradient = Instance.new("UIGradient")
-menuGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
-menuGradient.Rotation = 90
-menuGradient.Parent = menuButton
-
--- Menu button click handler
-menuButton.MouseButton1Click:Connect(function()
-	local showMenuEvent = LocalPlayer:FindFirstChild("ShowMainMenu")
-	if showMenuEvent then
-		showMenuEvent:Fire()
-	end
-end)
-
--- Spectate button - positioned above pause button (pause is at 0.02, 0.70)
+-- Spectate button - positioned above pause button
 local spectateButton = Instance.new("TextButton")
 spectateButton.Name = "SpectateButton"
 spectateButton.Size = UDim2.new(0.13, 0, 0.08, 0)
-spectateButton.Position = UDim2.new(0.02, 0, 0.60, 0)
+spectateButton.Position = UDim2.new(0.02, 0, 0.50, 0)
 spectateButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 spectateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spectateButton.Text = "Spectate"

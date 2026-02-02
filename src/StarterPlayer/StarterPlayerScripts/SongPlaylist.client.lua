@@ -72,7 +72,7 @@ local function createGui()
 	pauseButton = Instance.new("TextButton")
 	pauseButton.Name = "PauseButton"
 	pauseButton.Size = UDim2.new(0.13, 0, 0.08, 0)       -- 13% width, 8% height
-	pauseButton.Position = UDim2.new(0.02, 0, 0.70, 0)   -- 2% from left, 4% from top
+	pauseButton.Position = UDim2.new(0.02, 0, 0.60, 0)   -- 2% from left, raised up
 	pauseButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 	pauseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	pauseButton.Text = isPaused and "Play" or "Pause"
@@ -99,7 +99,7 @@ local function createGui()
 	backButton = Instance.new("TextButton")
 	backButton.Name = "BackButton"
 	backButton.Size = UDim2.new(0.07, 0, 0.08, 0)        -- 7% width, 8% height
-	backButton.Position = UDim2.new(0.17, 0, 0.70, 0)    -- after pause button
+	backButton.Position = UDim2.new(0.17, 0, 0.60, 0)    -- after pause button
 	backButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 	backButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	backButton.Text = "<<"
@@ -126,7 +126,7 @@ local function createGui()
 	skipButton = Instance.new("TextButton")
 	skipButton.Name = "SkipButton"
 	skipButton.Size = UDim2.new(0.07, 0, 0.08, 0)        -- 7% width, 8% height
-	skipButton.Position = UDim2.new(0.25, 0, 0.70, 0)    -- after back button
+	skipButton.Position = UDim2.new(0.25, 0, 0.60, 0)    -- after back button
 	skipButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 	skipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	skipButton.Text = ">>"
@@ -153,7 +153,7 @@ local function createGui()
 	songLabel = Instance.new("TextLabel")
 	songLabel.Name = "SongLabel"
 	songLabel.Size = UDim2.new(0.36, 0, 0.07, 0)         
-	songLabel.Position = UDim2.new(0.20, 0, 0.80, 0)      
+	songLabel.Position = UDim2.new(0.20, 0, 0.70, 0)      
 	songLabel.AnchorPoint = Vector2.new(0.5, 0)
 	songLabel.BackgroundTransparency = 0.5
 	songLabel.BackgroundColor3 = Color3.fromRGB(0,0,0)
