@@ -33,11 +33,11 @@ task.spawn(function()
 	end
 end)
 
--- Spectate button - positioned above pause button
+-- Spectate button - positioned under music controls in top left
 local spectateButton = Instance.new("TextButton")
 spectateButton.Name = "SpectateButton"
-spectateButton.Size = UDim2.new(0.13, 0, 0.08, 0)
-spectateButton.Position = UDim2.new(0.02, 0, 0.50, 0)
+spectateButton.Size = UDim2.new(0.10, 0, 0.06, 0)
+spectateButton.Position = UDim2.new(0.02, 0, 0.25, 0)
 spectateButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 spectateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spectateButton.Text = "Spectate"
