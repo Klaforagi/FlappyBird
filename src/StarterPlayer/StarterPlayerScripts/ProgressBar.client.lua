@@ -164,7 +164,7 @@ local function buildGlobalMarkers()
 	end
 end
 
--- Build markers for local view (no markers, just start/end labels)
+-- Build markers for local view (4 notches every 10 stages + start/end labels)
 local function buildLocalMarkers(zoneIndex)
 	for _, child in ipairs(markersContainer:GetChildren()) do
 		child:Destroy()
@@ -173,31 +173,71 @@ local function buildLocalMarkers(zoneIndex)
 	local zoneStart = zoneIndex * STAGES_PER_ZONE
 	local zoneEnd = zoneStart + STAGES_PER_ZONE
 	
-	-- Start label
+	-- Start marker at 0
+	local startMarker = Instance.new("Frame")
+	startMarker.Name = "MarkerStart"
+	startMarker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
+	startMarker.Position = UDim2.new(0, -1, 0, -4)
+	startMarker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+	startMarker.BorderSizePixel = 0
+	startMarker.Parent = markersContainer
+	
 	local startLabel = Instance.new("TextLabel")
-	startLabel.Name = "StartLabel"
 	startLabel.Size = UDim2.new(0, 40, 0, 16)
-	startLabel.Position = UDim2.new(0, 0, 1, 2)
-	startLabel.AnchorPoint = Vector2.new(0, 0)
+	startLabel.Position = UDim2.new(0.5, 0, 1, 2)
+	startLabel.AnchorPoint = Vector2.new(0.5, 0)
 	startLabel.BackgroundTransparency = 1
 	startLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	startLabel.TextSize = 12
+	startLabel.TextSize = 10
 	startLabel.Font = Enum.Font.SourceSansBold
 	startLabel.Text = tostring(zoneStart)
-	startLabel.Parent = markersContainer
+	startLabel.Parent = startMarker
 	
-	-- End label
+	-- 4 notches at 10, 20, 30, 40 relative stages (0.2, 0.4, 0.6, 0.8)
+	for i = 1, 4 do
+		local relativeStage = i * 10
+		local stageNum = zoneStart + relativeStage
+		local xPos = relativeStage / STAGES_PER_ZONE
+		
+		local marker = Instance.new("Frame")
+		marker.Name = "Marker" .. i
+		marker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
+		marker.Position = UDim2.new(xPos, -1, 0, -4)
+		marker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+		marker.BorderSizePixel = 0
+		marker.Parent = markersContainer
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 40, 0, 16)
+		label.Position = UDim2.new(0.5, 0, 1, 2)
+		label.AnchorPoint = Vector2.new(0.5, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.fromRGB(200, 200, 200)
+		label.TextSize = 10
+		label.Font = Enum.Font.SourceSansBold
+		label.Text = tostring(stageNum)
+		label.Parent = marker
+	end
+	
+	-- End marker at 50
+	local endMarker = Instance.new("Frame")
+	endMarker.Name = "MarkerEnd"
+	endMarker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
+	endMarker.Position = UDim2.new(1, -1, 0, -4)
+	endMarker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+	endMarker.BorderSizePixel = 0
+	endMarker.Parent = markersContainer
+	
 	local endLabel = Instance.new("TextLabel")
-	endLabel.Name = "EndLabel"
 	endLabel.Size = UDim2.new(0, 40, 0, 16)
-	endLabel.Position = UDim2.new(1, 0, 1, 2)
-	endLabel.AnchorPoint = Vector2.new(1, 0)
+	endLabel.Position = UDim2.new(0.5, 0, 1, 2)
+	endLabel.AnchorPoint = Vector2.new(0.5, 0)
 	endLabel.BackgroundTransparency = 1
 	endLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-	endLabel.TextSize = 12
+	endLabel.TextSize = 10
 	endLabel.Font = Enum.Font.SourceSansBold
 	endLabel.Text = tostring(zoneEnd)
-	endLabel.Parent = markersContainer
+	endLabel.Parent = endMarker
 end
 
 -- Get player headshot
