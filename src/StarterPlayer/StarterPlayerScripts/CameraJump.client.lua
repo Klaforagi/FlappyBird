@@ -1,6 +1,10 @@
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
+-- Persistent camera connection that survives death
+local persistentCameraConn = nil
+local lastKnownPosition = Vector3.new(0, 5, 0)
+
 local function waitForCamera()
 	local cam
 	repeat
@@ -41,12 +45,50 @@ local function waitForHRPandHumanoid(char)
 	return hrp, humanoid
 end
 
+-- Setup persistent camera that never changes
+local function setupPersistentCamera()
+	local cam = waitForCamera()
+	
+	player.CameraMode = Enum.CameraMode.Classic
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.FieldOfView = 60
+	player.CameraMinZoomDistance = 5
+	player.CameraMaxZoomDistance = 5
+	
+	-- Check for spectating value
+	local isSpectating = player:FindFirstChild("IsSpectating")
+	
+	if persistentCameraConn then
+		persistentCameraConn:Disconnect()
+	end
+	
+	persistentCameraConn = RunService.RenderStepped:Connect(function()
+		-- Don't update camera if spectating
+		if isSpectating and isSpectating.Value then return end
+		
+		-- Get current character's HRP if available
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		
+		if hrp then
+			lastKnownPosition = hrp.Position
+		end
+		
+		-- Always use side-view camera, even during death
+		cam.CameraType = Enum.CameraType.Scriptable
+		cam.CFrame = CFrame.new(
+			Vector3.new(lastKnownPosition.X, 5, lastKnownPosition.Z + 35),
+			Vector3.new(lastKnownPosition.X + 0.1, 5, lastKnownPosition.Z)
+		)
+	end)
+	
+	print("Persistent flappy camera enabled.")
+end
+
 local function setupFlappyMode(char, hrp, humanoid, cam, controls)
-	task.wait(0.15) -- Extra wait for mobile initialization
+	task.wait(0.1)
 
-	local renderConn = nil
-
-	-- Ensure FlappyMode BoolValue exists and is shared with other scripts
+	-- Ensure FlappyMode BoolValue exists
 	local flappyMode = char:FindFirstChild("FlappyMode")
 	if not flappyMode then
 		flappyMode = Instance.new("BoolValue")
@@ -59,46 +101,17 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 	end
 	flappyMode.Value = false
 
-	-- === ALWAYS RESET CAMERA ON RESPAWN ===
-	cam.CameraType = Enum.CameraType.Custom
-	cam.CameraSubject = hrp
-	task.wait()
-
-	-- Make sure FlappyMode turns off on death too
+	-- Make sure FlappyMode turns off on death
 	humanoid.Died:Connect(function()
-		if renderConn then
-			renderConn:Disconnect()
-			renderConn = nil
-		end
-		cam.CFrame = cam.CFrame
-		task.wait(3.0)
 		if flappyMode then
 			flappyMode.Value = false
 		end
-		cam.CameraType = Enum.CameraType.Custom
 	end)
 
-	-- Always enable flappy camera (permanent side-view)
-	player.CameraMode = Enum.CameraMode.Classic
-	cam.CameraType = Enum.CameraType.Scriptable
-	cam.FieldOfView = 60
-	player.CameraMinZoomDistance = 5
-	player.CameraMaxZoomDistance = 5
-
-	-- Check for spectating value
-	local isSpectating = player:FindFirstChild("IsSpectating")
-
-	renderConn = RunService.RenderStepped:Connect(function()
-		-- Don't update camera if spectating (Spectate script handles it)
-		if isSpectating and isSpectating.Value then return end
-		cam.CFrame = CFrame.new(Vector3.new(hrp.Position.X, 5, hrp.Position.Z + 35), Vector3.new(hrp.Position.X + 0.1, 5, hrp.Position.Z))
-	end)
-	print("Flappy camera enabled permanently.")
-
-	-- Always disable default controls (PlayerMovement handles everything)
+	-- Always disable default controls
 	controls:Disable()
 	
-	-- Jump with spacebar (only in FlappyMode - normal mode uses PlayerMovement)
+	-- Jump with spacebar (only in FlappyMode)
 	local UIS = game:GetService("UserInputService")
 	UIS.InputBegan:Connect(function(input, processed)
 		if flappyMode.Value and input.KeyCode == Enum.KeyCode.Space and not processed then
@@ -107,7 +120,10 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 	end)
 end
 
--- Main connection, robust for mobile first join and respawn
+-- Setup persistent camera ONCE at start
+setupPersistentCamera()
+
+-- Main connection for character-specific setup
 player.CharacterAdded:Connect(function()
 	local char = waitForCharacter()
 	local hrp, humanoid = waitForHRPandHumanoid(char)
