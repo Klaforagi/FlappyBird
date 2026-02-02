@@ -1,5 +1,6 @@
 local FORWARD_SPEED = 18
 local MOVE_SPEED = 18
+local LOCKED_Z = -153.2
 local char = script.Parent
 local hrp = char:WaitForChild("HumanoidRootPart")
 local humanoid = char:WaitForChild("Humanoid")
@@ -73,10 +74,19 @@ local function enableManualMove_PC()
 			-- Move character along X-axis only
 			humanoid:Move(Vector3.new(moveX, 0, 0))
 			
-			-- Face movement direction
-			if moveX ~= 0 then
-				hrp.CFrame = CFrame.new(hrp.Position, hrp.Position + Vector3.new(moveX, 0, 0))
+			-- Get facing direction
+			local faceDir = 1 -- Default face right
+			if moveX < 0 then
+				faceDir = -1 -- Face left
+			elseif moveX > 0 then
+				faceDir = 1 -- Face right
+			else
+				-- Keep current facing direction when not moving
+				faceDir = hrp.CFrame.LookVector.X >= 0 and 1 or -1
 			end
+			
+			-- Lock Z position and facing direction (same as mobile)
+			hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y, LOCKED_Z) * CFrame.Angles(0, faceDir > 0 and -math.pi/2 or math.pi/2, 0)
 			
 			-- Jump with spacebar
 			if UIS:IsKeyDown(Enum.KeyCode.Space) then
@@ -91,6 +101,12 @@ end
 -- ==================== MOBILE CONTROLS ====================
 local function enableFlappyMove_Mobile()
 	print("Mobile: Enabling Auto-Forward Movement!")
+	
+	-- Disable manual movement
+	if moveConn then
+		moveConn:Disconnect()
+		moveConn = nil
+	end
 	
 	-- Enable auto-forward movement
 	if not bv then
@@ -110,7 +126,7 @@ local function enableFlappyMove_Mobile()
 end
 
 local function enableManualMove_Mobile()
-	print("Mobile: Using default Roblox controls!")
+	print("Mobile: Enabling Manual Left/Right Movement!")
 	
 	-- Disable auto-forward movement
 	if bv then
@@ -124,8 +140,28 @@ local function enableManualMove_Mobile()
 		orientConn = nil
 	end
 	
-	-- Let Roblox's default mobile controls work (thumbstick + jump button)
-	-- No custom movement code needed - just don't interfere
+	-- Lock Z position and facing direction
+	if not moveConn then
+		moveConn = RunService.Heartbeat:Connect(function()
+			-- Keep player locked to Z axis
+			local needsZFix = math.abs(hrp.Position.Z - LOCKED_Z) > 0.1
+			
+			-- Get current facing direction and snap to left or right
+			local moveDir = humanoid.MoveDirection
+			local faceDir = 1 -- Default face right
+			if moveDir.X < -0.1 then
+				faceDir = -1 -- Face left
+			elseif moveDir.X > 0.1 then
+				faceDir = 1 -- Face right
+			else
+				-- Keep current facing direction when not moving
+				faceDir = hrp.CFrame.LookVector.X >= 0 and 1 or -1
+			end
+			
+			-- Apply locked Z and facing direction (face along X-axis: right = +X, left = -X)
+			hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y, LOCKED_Z) * CFrame.Angles(0, faceDir > 0 and -math.pi/2 or math.pi/2, 0)
+		end)
+	end
 end
 
 -- ==================== MODE SWITCHING ====================

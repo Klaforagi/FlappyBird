@@ -108,12 +108,15 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 		end
 	end)
 
-	-- Enable/disable controls based on flappy mode
+	-- Enable/disable controls based on flappy mode and platform
+	local UIS = game:GetService("UserInputService")
+	local isMobile = UIS.TouchEnabled
+	
 	local function updateControls()
 		if flappyMode.Value then
 			controls:Disable() -- Disable in flappy mode (we handle movement ourselves)
 		else
-			controls:Enable() -- Enable Roblox default controls in manual mode
+			controls:Enable() -- Enable controls in manual mode (we'll filter movement to X-axis)
 		end
 	end
 	
