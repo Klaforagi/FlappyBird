@@ -28,12 +28,20 @@ local function getRespawnCheckpoint(stageValue, checkpointParts)
 end
 
 Players.PlayerAdded:Connect(function(player)
+	local firstSpawn = true
+	
 	player.CharacterAdded:Connect(function(char)
 		local hrp = char:WaitForChild("HumanoidRootPart")
 		-- Wait for leaderstats to exist and get Stage value
 		local leaderstats = player:FindFirstChild("leaderstats") or player:WaitForChild("leaderstats")
 		local stageVal = leaderstats:FindFirstChild("Stage")
 		local currentStage = (stageVal and stageVal.Value) or 0
+
+		-- Skip checkpoint teleport on first spawn (for testing purposes)
+		if firstSpawn then
+			firstSpawn = false
+			return
+		end
 
 		-- Always re-get checkpoints in case they changed
 		local checkpointParts = getCheckpointParts()
