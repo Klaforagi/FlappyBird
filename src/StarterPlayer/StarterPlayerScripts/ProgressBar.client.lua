@@ -6,7 +6,7 @@ local TOTAL_STAGES = 500
 local STAGES_PER_ZONE = 50
 -- Base sizes (designed for 1080p, will scale with screen)
 local BASE_SCREEN_HEIGHT = 1080
-local BASE_ICON_SIZE = 32
+local BASE_ICON_SIZE = 50
 local BASE_BAR_HEIGHT = 12
 local BASE_LANE_HEIGHT = 36
 local MAX_LANES = 4
