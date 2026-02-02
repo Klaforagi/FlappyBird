@@ -23,7 +23,7 @@ local CAMERA_END_ORIENTATION = Vector3.new(-4.232, -36.002, 0)
 local CAMERA_FOV = 70
 
 -- Panning settings
-local PAN_DURATION = 10 -- seconds to reach end point
+local PAN_DURATION = 15 -- seconds to reach end point
 local FADE_DURATION = 0.5
 local FADE_OPACITY = 0 -- fully black
 
@@ -182,16 +182,18 @@ local function createMainMenu()
 	background.Size = UDim2.new(1, 0, 1, 0)
 	background.BackgroundTransparency = 1
 	background.BorderSizePixel = 0
+	background.ZIndex = 5
 	background.Parent = screenGui
 	
 	-- Fade overlay for transitions (starts black for initial fade-in)
+	-- ZIndex 2 keeps it behind UI elements (ZIndex 5) but covers camera
 	fadeOverlay = Instance.new("Frame")
 	fadeOverlay.Name = "FadeOverlay"
 	fadeOverlay.Size = UDim2.new(1, 0, 1, 0)
 	fadeOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	fadeOverlay.BackgroundTransparency = 0 -- Start fully black
 	fadeOverlay.BorderSizePixel = 0
-	fadeOverlay.ZIndex = 10
+	fadeOverlay.ZIndex = 2
 	fadeOverlay.Parent = screenGui
 	
 	-- Title
@@ -214,11 +216,11 @@ local function createMainMenu()
 	titleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	titleStroke.Parent = title
 	
-	-- Button container
+	-- Button container (positioned near bottom of screen)
 	local buttonContainer = Instance.new("Frame")
 	buttonContainer.Name = "ButtonContainer"
-	buttonContainer.Size = UDim2.new(0.3, 0, 0.5, 0)
-	buttonContainer.Position = UDim2.new(0.5, 0, 0.55, 0)
+	buttonContainer.Size = UDim2.new(0.2, 0, 0.12, 0)
+	buttonContainer.Position = UDim2.new(0.5, 0, 0.78, 0)
 	buttonContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 	buttonContainer.BackgroundTransparency = 1
 	buttonContainer.ZIndex = 5
@@ -235,7 +237,7 @@ local function createMainMenu()
 	local function createButton(name, text, layoutOrder)
 		local button = Instance.new("TextButton")
 		button.Name = name
-		button.Size = UDim2.new(1, 0, 0.2, 0)
+		button.Size = UDim2.new(1, 0, 1, 0)
 		button.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 		button.TextColor3 = Color3.fromRGB(255, 255, 255)
 		button.Text = text
@@ -270,40 +272,27 @@ local function createMainMenu()
 	
 	-- Create buttons
 	local playButton = createButton("PlayButton", "Play", 1)
-	local spectateButton = createButton("SpectateButton", "Spectate", 2)
-	local optionsButton = createButton("OptionsButton", "Options", 3)
 	
 	-- Play button action
 	playButton.MouseButton1Click:Connect(function()
+		-- Fire server to spawn character
+		PlayEvent:FireServer()
+		
+		-- Wait for character to load while keeping menu camera
+		local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+		character:WaitForChild("HumanoidRootPart")
+		
+		-- Give camera a moment to attach to character
+		task.wait(0.1)
+		
+		-- Now stop menu camera and hide UI
 		menuOpen = false
 		screenGui.Enabled = false
 		stopMenuCamera()
-		PlayEvent:FireServer()
 	end)
 	
-	-- Spectate button action (spectate without spawning)
-	spectateButton.MouseButton1Click:Connect(function()
-		-- Check if there are other players to spectate
-		local otherPlayers = {}
-		for _, player in ipairs(Players:GetPlayers()) do
-			if player ~= LocalPlayer and player.Character then
-				table.insert(otherPlayers, player)
-			end
-		end
-		
-		-- Only proceed if there are players to spectate
-		if #otherPlayers > 0 then
-			menuOpen = false
-			screenGui.Enabled = false
-			stopMenuCamera()
-		end
-		-- If no players, do nothing (button just doesn't work)
-	end)
-	
-	-- Options button action (placeholder)
-	optionsButton.MouseButton1Click:Connect(function()
-		-- Does nothing yet
-	end)
+	-- Remove any logic or event connections for spectateButton, optionsButton, and menuButton
+	-- ...existing code...
 	
 	screenGui.Parent = PlayerGui
 	return screenGui
