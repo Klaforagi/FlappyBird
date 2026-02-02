@@ -161,12 +161,28 @@ spectateButton.MouseButton1Click:Connect(function()
 			return
 		end
 		spectating = true
-		spectateButton.Text = "Stop"
+		-- Disable player movement
+		local char = LocalPlayer.Character
+		if char then
+			local humanoid = char:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.WalkSpeed = 0
+				humanoid.JumpPower = 0
+			end
+		end
 		startSpectate()
 	else
 		spectating = false
-		spectateButton.Text = "Spectate"
 		stopSpectate()
+		-- Re-enable player movement
+		local char = LocalPlayer.Character
+		if char then
+			local humanoid = char:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.WalkSpeed = 16
+				humanoid.JumpPower = 50
+			end
+		end
 	end
 end)
 
@@ -195,8 +211,16 @@ local function updateSpectateUI()
 		spectateButton.Visible = false
 		if spectating then
 			spectating = false
-			spectateButton.Text = "Spectate"
 			stopSpectate()
+			-- Re-enable player movement
+			local char = LocalPlayer.Character
+			if char then
+				local humanoid = char:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.WalkSpeed = 16
+					humanoid.JumpPower = 50
+				end
+			end
 		end
 		bottomContainer.Visible = false
 	else
@@ -227,7 +251,6 @@ LocalPlayer.CharacterAdded:Connect(function()
 	-- Stop spectating on respawn
 	if spectating then
 		spectating = false
-		spectateButton.Text = "Spectate"
 		stopSpectate()
 	end
 	setupFlappyModeListener()
@@ -242,8 +265,16 @@ Players.PlayerRemoving:Connect(function(p)
 			startSpectate()
 		else
 			spectating = false
-			spectateButton.Text = "Spectate"
 			stopSpectate()
+			-- Re-enable player movement
+			local char = LocalPlayer.Character
+			if char then
+				local humanoid = char:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.WalkSpeed = 16
+					humanoid.JumpPower = 50
+				end
+			end
 		end
 	end
 end)
