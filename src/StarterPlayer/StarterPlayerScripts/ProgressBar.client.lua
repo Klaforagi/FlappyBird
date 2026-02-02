@@ -3,10 +3,14 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
 local TOTAL_STAGES = 500
+local STAGES_PER_ZONE = 50
 local ICON_SIZE = 32
 local BAR_HEIGHT = 12
 local LANE_HEIGHT = 36
 local MAX_LANES = 4
+
+-- Mode: "global" shows all 500 stages, "local" shows current zone only
+local viewMode = "global"
 
 -- UI Setup
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -24,6 +28,15 @@ container.Position = UDim2.new(0.5, 0, 1, -10)
 container.AnchorPoint = Vector2.new(0.5, 1)
 container.BackgroundTransparency = 1
 container.Parent = progressGui
+
+-- Clickable area (generous hitbox)
+local clickArea = Instance.new("TextButton")
+clickArea.Name = "ClickArea"
+clickArea.Size = UDim2.new(1, 0, 0, BAR_HEIGHT + 30)
+clickArea.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - 15)
+clickArea.BackgroundTransparency = 1
+clickArea.Text = ""
+clickArea.Parent = container
 
 -- Progress bar background
 local barBackground = Instance.new("Frame")
@@ -54,38 +67,20 @@ local segmentColors = {
 	Color3.fromRGB(40, 40, 40),    -- 450-500: black
 }
 
-for i = 1, 10 do
-	local segment = Instance.new("Frame")
-	segment.Name = "Segment" .. i
-	segment.Size = UDim2.new(0.1, 0, 1, 0)
-	segment.Position = UDim2.new((i - 1) * 0.1, 0, 0, 0)
-	segment.BackgroundColor3 = segmentColors[i]
-	segment.BorderSizePixel = 0
-	segment.Parent = barBackground
-end
+-- Container for segments
+local segmentsContainer = Instance.new("Frame")
+segmentsContainer.Name = "SegmentsContainer"
+segmentsContainer.Size = UDim2.new(1, 0, 1, 0)
+segmentsContainer.BackgroundTransparency = 1
+segmentsContainer.Parent = barBackground
 
--- Stage markers every 50 (0, 50, 100, ..., 500)
-for i = 0, 10 do
-	local stageNum = i * 50
-	local marker = Instance.new("Frame")
-	marker.Name = "Marker" .. stageNum
-	marker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
-	marker.Position = UDim2.new(i / 10, -1, 1, -BAR_HEIGHT - 4)
-	marker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-	marker.BorderSizePixel = 0
-	marker.Parent = container
-	
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 40, 0, 16)
-	label.Position = UDim2.new(0.5, 0, 1, 2)
-	label.AnchorPoint = Vector2.new(0.5, 0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.fromRGB(200, 200, 200)
-	label.TextSize = 10
-	label.Font = Enum.Font.SourceSansBold
-	label.Text = tostring(stageNum)
-	label.Parent = marker
-end
+-- Container for markers
+local markersContainer = Instance.new("Frame")
+markersContainer.Name = "MarkersContainer"
+markersContainer.Size = UDim2.new(1, 0, 1, 0)
+markersContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
+markersContainer.BackgroundTransparency = 1
+markersContainer.Parent = container
 
 -- Player icons container
 local iconsContainer = Instance.new("Frame")
@@ -98,6 +93,112 @@ iconsContainer.Parent = container
 -- Store player icons and data
 local playerIcons = {}
 local playerLanes = {}
+
+-- Get local player's current zone (0-9)
+local function getLocalPlayerZone()
+	local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+	local stage = leaderstats and leaderstats:FindFirstChild("Stage")
+	local stageValue = stage and stage.Value or 0
+	return math.floor(stageValue / STAGES_PER_ZONE)
+end
+
+-- Build segments for global view
+local function buildGlobalSegments()
+	for _, child in ipairs(segmentsContainer:GetChildren()) do
+		child:Destroy()
+	end
+	
+	for i = 1, 10 do
+		local segment = Instance.new("Frame")
+		segment.Name = "Segment" .. i
+		segment.Size = UDim2.new(0.1, 0, 1, 0)
+		segment.Position = UDim2.new((i - 1) * 0.1, 0, 0, 0)
+		segment.BackgroundColor3 = segmentColors[i]
+		segment.BorderSizePixel = 0
+		segment.Parent = segmentsContainer
+	end
+end
+
+-- Build segments for local view (single zone color fills the bar)
+local function buildLocalSegments(zoneIndex)
+	for _, child in ipairs(segmentsContainer:GetChildren()) do
+		child:Destroy()
+	end
+	
+	local colorIndex = math.clamp(zoneIndex + 1, 1, 10)
+	local segment = Instance.new("Frame")
+	segment.Name = "LocalSegment"
+	segment.Size = UDim2.new(1, 0, 1, 0)
+	segment.Position = UDim2.new(0, 0, 0, 0)
+	segment.BackgroundColor3 = segmentColors[colorIndex]
+	segment.BorderSizePixel = 0
+	segment.Parent = segmentsContainer
+end
+
+-- Build markers for global view
+local function buildGlobalMarkers()
+	for _, child in ipairs(markersContainer:GetChildren()) do
+		child:Destroy()
+	end
+	
+	for i = 0, 10 do
+		local stageNum = i * 50
+		local marker = Instance.new("Frame")
+		marker.Name = "Marker" .. stageNum
+		marker.Size = UDim2.new(0, 2, 0, BAR_HEIGHT + 8)
+		marker.Position = UDim2.new(i / 10, -1, 0, -4)
+		marker.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+		marker.BorderSizePixel = 0
+		marker.Parent = markersContainer
+		
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0, 40, 0, 16)
+		label.Position = UDim2.new(0.5, 0, 1, 2)
+		label.AnchorPoint = Vector2.new(0.5, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.fromRGB(200, 200, 200)
+		label.TextSize = 10
+		label.Font = Enum.Font.SourceSansBold
+		label.Text = tostring(stageNum)
+		label.Parent = marker
+	end
+end
+
+-- Build markers for local view (no markers, just start/end labels)
+local function buildLocalMarkers(zoneIndex)
+	for _, child in ipairs(markersContainer:GetChildren()) do
+		child:Destroy()
+	end
+	
+	local zoneStart = zoneIndex * STAGES_PER_ZONE
+	local zoneEnd = zoneStart + STAGES_PER_ZONE
+	
+	-- Start label
+	local startLabel = Instance.new("TextLabel")
+	startLabel.Name = "StartLabel"
+	startLabel.Size = UDim2.new(0, 40, 0, 16)
+	startLabel.Position = UDim2.new(0, 0, 1, 2)
+	startLabel.AnchorPoint = Vector2.new(0, 0)
+	startLabel.BackgroundTransparency = 1
+	startLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	startLabel.TextSize = 12
+	startLabel.Font = Enum.Font.SourceSansBold
+	startLabel.Text = tostring(zoneStart)
+	startLabel.Parent = markersContainer
+	
+	-- End label
+	local endLabel = Instance.new("TextLabel")
+	endLabel.Name = "EndLabel"
+	endLabel.Size = UDim2.new(0, 40, 0, 16)
+	endLabel.Position = UDim2.new(1, 0, 1, 2)
+	endLabel.AnchorPoint = Vector2.new(1, 0)
+	endLabel.BackgroundTransparency = 1
+	endLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	endLabel.TextSize = 12
+	endLabel.Font = Enum.Font.SourceSansBold
+	endLabel.Text = tostring(zoneEnd)
+	endLabel.Parent = markersContainer
+end
 
 -- Get player headshot
 local function getHeadshot(userId, imageLabel)
@@ -194,23 +295,7 @@ local function removePlayerIcon(player)
 end
 
 -- Calculate lanes to avoid overlap
-local function calculateLanes()
-	local positions = {}
-	
-	-- Get all player positions
-	for player, icon in pairs(playerIcons) do
-		local leaderstats = player:FindFirstChild("leaderstats")
-		local stage = leaderstats and leaderstats:FindFirstChild("Stage")
-		local stageValue = stage and stage.Value or 0
-		local xPos = stageValue / TOTAL_STAGES
-		
-		table.insert(positions, {
-			player = player,
-			xPos = xPos,
-			stageValue = stageValue
-		})
-	end
-	
+local function calculateLanes(positions)
 	-- Sort by position
 	table.sort(positions, function(a, b) return a.xPos < b.xPos end)
 	
@@ -240,27 +325,106 @@ end
 
 -- Update all player positions
 local function updatePositions()
-	calculateLanes()
+	local currentZone = getLocalPlayerZone()
+	local zoneStart = currentZone * STAGES_PER_ZONE
+	local zoneEnd = zoneStart + STAGES_PER_ZONE
 	
+	local positions = {}
+	
+	-- Get all player positions
 	for player, icon in pairs(playerIcons) do
 		local leaderstats = player:FindFirstChild("leaderstats")
 		local stage = leaderstats and leaderstats:FindFirstChild("Stage")
 		local stageValue = stage and stage.Value or 0
 		
-		local xPos = math.clamp(stageValue / TOTAL_STAGES, 0, 1)
-		local lane = playerLanes[player] or 0
-		local yPos = (MAX_LANES - 1 - lane) * LANE_HEIGHT
+		local xPos
+		local visible = true
 		
-		-- Animate position
-		icon:TweenPosition(
-			UDim2.new(xPos, -ICON_SIZE / 2, 0, yPos),
-			Enum.EasingDirection.Out,
-			Enum.EasingStyle.Quad,
-			0.3,
-			true
-		)
+		if viewMode == "global" then
+			xPos = stageValue / TOTAL_STAGES
+		else
+			-- Local mode: only show players in the same zone
+			if stageValue >= zoneStart and stageValue < zoneEnd then
+				xPos = (stageValue - zoneStart) / STAGES_PER_ZONE
+			else
+				visible = false
+				xPos = 0
+			end
+		end
+		
+		xPos = math.clamp(xPos, 0, 1)
+		icon.Visible = visible
+		
+		if visible then
+			table.insert(positions, {
+				player = player,
+				xPos = xPos,
+				stageValue = stageValue
+			})
+		end
+	end
+	
+	calculateLanes(positions)
+	
+	for player, icon in pairs(playerIcons) do
+		if icon.Visible then
+			local leaderstats = player:FindFirstChild("leaderstats")
+			local stage = leaderstats and leaderstats:FindFirstChild("Stage")
+			local stageValue = stage and stage.Value or 0
+			
+			local xPos
+			if viewMode == "global" then
+				xPos = stageValue / TOTAL_STAGES
+			else
+				xPos = (stageValue - zoneStart) / STAGES_PER_ZONE
+			end
+			xPos = math.clamp(xPos, 0, 1)
+			
+			local lane = playerLanes[player] or 0
+			local yPos = (MAX_LANES - 1 - lane) * LANE_HEIGHT
+			
+			-- Animate position
+			icon:TweenPosition(
+				UDim2.new(xPos, -ICON_SIZE / 2, 0, yPos),
+				Enum.EasingDirection.Out,
+				Enum.EasingStyle.Quad,
+				0.3,
+				true
+			)
+		end
 	end
 end
+
+-- Rebuild UI for current mode
+local function rebuildUI()
+	local currentZone = getLocalPlayerZone()
+	
+	if viewMode == "global" then
+		buildGlobalSegments()
+		buildGlobalMarkers()
+	else
+		buildLocalSegments(currentZone)
+		buildLocalMarkers(currentZone)
+	end
+	
+	updatePositions()
+end
+
+-- Toggle between global and local mode
+local function toggleMode()
+	if viewMode == "global" then
+		viewMode = "local"
+	else
+		viewMode = "global"
+	end
+	rebuildUI()
+end
+
+-- Click handler
+clickArea.MouseButton1Click:Connect(toggleMode)
+
+-- Track local player's zone for rebuild detection
+local lastLocalZone = getLocalPlayerZone()
 
 -- Setup stage listener for a player
 local function setupStageListener(player)
@@ -268,6 +432,15 @@ local function setupStageListener(player)
 		local stage = leaderstats:WaitForChild("Stage", 10)
 		if stage then
 			stage.Changed:Connect(function()
+				-- If this is the local player and we're in local mode, check for zone change
+				if player == LocalPlayer and viewMode == "local" then
+					local newZone = getLocalPlayerZone()
+					if newZone ~= lastLocalZone then
+						lastLocalZone = newZone
+						rebuildUI()
+						return
+					end
+				end
 				updatePositions()
 			end)
 			updatePositions()
@@ -310,6 +483,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 -- Initial update
+rebuildUI()
 task.delay(1, updatePositions)
 
 -- Periodic refresh to catch any missed updates
