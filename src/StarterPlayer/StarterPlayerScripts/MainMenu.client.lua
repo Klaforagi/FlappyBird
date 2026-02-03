@@ -3,6 +3,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local ContentProvider = game:GetService("ContentProvider")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Hide leaderboard/playerlist and chat immediately to prevent flash on load
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+
+-- Force landscape mode on mobile
+if UserInputService.TouchEnabled then
+	PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	PlayerGui.ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor
+end
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -108,6 +120,10 @@ local function initialFadeIn()
 	if not fadeOverlay then return end
 	local tween = TweenService:Create(fadeOverlay, TweenInfo.new(FADE_DURATION), {BackgroundTransparency = 1})
 	tween:Play()
+	tween.Completed:Connect(function()
+		-- Re-enable chat after initial fade in completes
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)
+	end)
 end
 
 -- Start menu camera system with panning
@@ -275,6 +291,9 @@ local function createMainMenu()
 	
 	-- Play button action
 	playButton.MouseButton1Click:Connect(function()
+		-- Show leaderboard when starting game
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+		
 		-- Fire server to spawn character
 		PlayEvent:FireServer()
 		

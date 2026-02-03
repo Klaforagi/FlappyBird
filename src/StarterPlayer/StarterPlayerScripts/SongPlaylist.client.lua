@@ -222,13 +222,14 @@ end
 -- Initial GUI setup
 createGui()
 
--- Re-create GUI every time the player respawns
 player.CharacterAdded:Connect(function()
 	createGui()
 end)
 
 if #songs > 0 then
-	playNextSong()
+	task.delay(1, function()
+		playNextSong()
+	end)
 else
 	if songLabel then
 		songLabel.Text = "Now Playing: (no songs found)"

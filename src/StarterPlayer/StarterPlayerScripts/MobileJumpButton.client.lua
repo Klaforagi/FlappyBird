@@ -8,6 +8,7 @@ end
 
 print("MobileJumpButton: Running on mobile device")
 
+
 local function setupCharacter(char)
 	local humanoid = char:WaitForChild("Humanoid")
 	local flappyMode = char:WaitForChild("FlappyMode")
@@ -16,34 +17,65 @@ local function setupCharacter(char)
 	local lastJumpTime = 0
 	local jumpCooldown = 0.05 -- seconds
 
-	local function onTap()
+	local function doJump()
 		local now = tick()
 		if now - lastJumpTime > jumpCooldown then
-			-- In flappy mode, always allow jump (tap to flap)
 			if flappyMode.Value then
-				local state = humanoid:GetState()
-				if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.Freefall then
-					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-					lastJumpTime = now
-				end
+				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				lastJumpTime = now
 			end
-			-- In manual mode, Roblox's default jump button handles jumping
 		end
 	end
 
-	-- Always listen for taps on mobile (for flappy mode jumping)
-	local tapConn = UIS.TouchTap:Connect(function(touchPositions, processed)
-		-- Only process if not already handled by UI
-		if not processed then
-			onTap()
-		end
+	-- Remove tap-to-jump; only jump button triggers jump
+	local tapConn = nil
+
+	-- Create jump button GUI
+	local jumpGui = Instance.new("ScreenGui")
+	jumpGui.Name = "MobileJumpButtonGui"
+	jumpGui.ResetOnSpawn = false
+	jumpGui.IgnoreGuiInset = true
+	jumpGui.Parent = player:WaitForChild("PlayerGui")
+
+	local jumpButton = Instance.new("TextButton")
+	jumpButton.Name = "JumpButton"
+	jumpButton.Text = "JUMP"
+	jumpButton.Size = UDim2.new(0, 120, 0, 120)
+	jumpButton.Position = UDim2.new(1, -130, 1, -130)
+	jumpButton.AnchorPoint = Vector2.new(0, 0)
+	jumpButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	jumpButton.Font = Enum.Font.FredokaOne
+	jumpButton.TextScaled = true
+	jumpButton.ZIndex = 10
+	jumpButton.Parent = jumpGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.5, 0)
+	corner.Parent = jumpButton
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(50, 100, 150)
+	stroke.Thickness = 3
+	stroke.Parent = jumpButton
+
+	jumpButton.MouseButton1Down:Connect(function()
+		doJump()
 	end)
-	
+
+	-- Show/hide jump button based on flappy mode
+	local function updateJumpButton()
+		jumpButton.Visible = flappyMode.Value
+	end
+	flappyMode.Changed:Connect(updateJumpButton)
+	updateJumpButton()
+
 	-- Clean up when character dies
 	humanoid.Died:Connect(function()
 		if tapConn then
 			tapConn:Disconnect()
 		end
+		jumpGui:Destroy()
 	end)
 end
 
