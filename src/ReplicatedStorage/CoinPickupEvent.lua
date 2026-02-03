@@ -1,0 +1,3 @@
+-- CoinPickupEvent.lua
+-- This is just a marker for the RemoteEvent, not a script
+-- Create a RemoteEvent named 'CoinPickupEvent' in ReplicatedStorage via Roblox Studio or code

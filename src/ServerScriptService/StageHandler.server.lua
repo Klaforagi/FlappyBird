@@ -57,6 +57,10 @@ local function onStageTouched(otherPart, stagePart)
 	if stageValue > highScore.Value then
 		highScore.Value = stageValue
 	end
+	
+	-- Award 1 coin for completing a stage
+	local CoinHandler = require(game.ServerScriptService:WaitForChild("CoinHandler"))
+	CoinHandler.awardCoins(player, 1)
 end
 
 -- DataStore helpers
