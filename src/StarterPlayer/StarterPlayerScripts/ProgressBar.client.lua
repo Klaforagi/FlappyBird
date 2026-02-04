@@ -14,6 +14,8 @@ local MAX_LANES = 4
 
 -- Scale for icons when in global view (slightly smaller)
 local GLOBAL_ICON_SCALE = 0.85
+-- Headshot zoom scale (1.5 = 50% zoomed in)
+local HEADSHOT_SCALE = 1.5
 
 -- Dynamic sizes (computed from screen size)
 local ICON_SIZE = BASE_ICON_SIZE
@@ -333,6 +335,7 @@ local function createPlayerIcon(player)
 		initialSize = math.floor(ICON_SIZE * GLOBAL_ICON_SCALE)
 	end
 	iconFrame.Size = UDim2.new(0, initialSize, 0, initialSize)
+	iconFrame.ClipsDescendants = true
 	iconFrame.Position = UDim2.new(0, 0, 0, 0)
 	iconFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	iconFrame.BorderSizePixel = 0
@@ -345,7 +348,7 @@ local function createPlayerIcon(player)
 	-- Headshot image
 	local headshot = Instance.new("ImageLabel")
 	headshot.Name = "Headshot"
-	headshot.Size = UDim2.new(1, -4, 1, -4)
+	headshot.Size = UDim2.new(HEADSHOT_SCALE, -4, HEADSHOT_SCALE, -4)
 	headshot.Position = UDim2.new(0.5, 0, 0.5, 0)
 	headshot.AnchorPoint = Vector2.new(0.5, 0.5)
 	headshot.BackgroundTransparency = 1

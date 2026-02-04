@@ -288,6 +288,26 @@ local function createMainMenu()
 	
 	-- Create buttons
 	local playButton = createButton("PlayButton", "Play", 1)
+	-- Tweak existing stroke on Play button to be darker/thicker to match other UI
+	local existingStroke = nil
+	for _, child in ipairs(playButton:GetChildren()) do
+		if child:IsA("UIStroke") then
+			existingStroke = child
+			break
+		end
+	end
+	if existingStroke then
+		existingStroke.Color = Color3.fromRGB(26, 64, 127) -- darker blue
+		existingStroke.Thickness = 5
+		existingStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	else
+		local playOutline = Instance.new("UIStroke")
+		playOutline.Name = "PlayOutline"
+		playOutline.Color = Color3.fromRGB(26, 64, 127)
+		playOutline.Thickness = 5
+		playOutline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		playOutline.Parent = playButton
+	end
 	
 	-- Play button action
 	playButton.MouseButton1Click:Connect(function()
