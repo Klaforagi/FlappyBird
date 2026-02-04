@@ -46,6 +46,22 @@ function CoinHandler.awardCoins(player, amount)
     coinEvent:FireClient(player, playerCoins[player])
 end
 
+function CoinHandler.getCoins(player)
+    return playerCoins[player] or 0
+end
+
+function CoinHandler.spendCoins(player, amount)
+    if not player or type(amount) ~= "number" or amount <= 0 then return false end
+    local current = playerCoins[player] or 0
+    if current < amount then
+        return false
+    end
+    playerCoins[player] = current - amount
+    -- notify client
+    coinEvent:FireClient(player, playerCoins[player])
+    return true
+end
+
 function CoinHandler.init()
     Players.PlayerAdded:Connect(function(player)
         local coins = loadCoins(player)

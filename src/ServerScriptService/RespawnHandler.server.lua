@@ -13,6 +13,10 @@ local continueEvent = Instance.new("RemoteEvent")
 continueEvent.Name = "ContinueEvent"
 continueEvent.Parent = ReplicatedStorage
 
+local continueResponse = Instance.new("RemoteEvent")
+continueResponse.Name = "ContinueResponse"
+continueResponse.Parent = ReplicatedStorage
+
 local playEvent = Instance.new("RemoteEvent")
 playEvent.Name = "PlayEvent"
 playEvent.Parent = ReplicatedStorage
@@ -23,6 +27,15 @@ spectateEvent.Parent = ReplicatedStorage
 
 -- Track which players have started playing
 local playersPlaying = {}
+-- Try to require CoinHandler module for coin operations
+local CoinHandler = nil
+local ServerScriptService = game:GetService("ServerScriptService")
+local coinModule = ServerScriptService:FindFirstChild("CoinHandler")
+if coinModule and coinModule.ClassName == "ModuleScript" then
+	CoinHandler = require(coinModule)
+else
+	warn("[RespawnHandler] CoinHandler module not found; continue cost checks will be disabled.")
+end
 
 -- Handle respawn requests from clients (after death)
 respawnEvent.OnServerEvent:Connect(function(player)
@@ -70,6 +83,30 @@ continueEvent.OnServerEvent:Connect(function(player, stageNum)
 	end
 	
 	-- Mark as continuing so checkpoint handler skips
+	-- Check and deduct coins (cost = 20)
+	local cost = 20
+	if CoinHandler and type(CoinHandler.spendCoins) == "function" then
+		local ok = CoinHandler.spendCoins(player, cost)
+		if not ok then
+			-- Not enough coins: do nothing (could notify client)
+			print("[RespawnHandler] Player", player.Name, "tried to Continue but lacked coins")
+			-- Notify client that continue was rejected
+			local resp = ReplicatedStorage:FindFirstChild("ContinueResponse")
+			if resp and resp:IsA("RemoteEvent") then
+				pcall(function() resp:FireClient(player, false) end)
+			end
+			return
+		end
+	else
+		-- If no CoinHandler present, allow continue
+	end
+
+	-- Notify client that continue was accepted
+	local resp = ReplicatedStorage:FindFirstChild("ContinueResponse")
+	if resp and resp:IsA("RemoteEvent") then
+		pcall(function() resp:FireClient(player, true) end)
+	end
+
 	player:SetAttribute("IsContinuing", true)
 	
 	-- Set up listener BEFORE spawning to avoid race condition
