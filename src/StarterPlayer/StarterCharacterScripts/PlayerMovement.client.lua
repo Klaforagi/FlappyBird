@@ -203,6 +203,15 @@ end
 local player = Players:GetPlayerFromCharacter(char)
 
 local function playCustomJump()
+	-- debounce when NOT in FlappyMode to avoid duplicate plays (multiple Jumping events)
+	if not flappyMode or not flappyMode.Value then
+		playCustomJump_last = playCustomJump_last or 0
+		local now = tick()
+		if now - playCustomJump_last < 0.2 then
+			return
+		end
+		playCustomJump_last = now
+	end
 	if not player then
 		player = Players:GetPlayerFromCharacter(char)
 		if not player then return end
