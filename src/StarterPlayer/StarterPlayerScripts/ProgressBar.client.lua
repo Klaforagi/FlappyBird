@@ -12,6 +12,9 @@ local BASE_BAR_HEIGHT = 24
 local BASE_LANE_HEIGHT = 72
 local MAX_LANES = 4
 
+-- Scale for icons when in global view (slightly smaller)
+local GLOBAL_ICON_SCALE = 0.85
+
 -- Dynamic sizes (computed from screen size)
 local ICON_SIZE = BASE_ICON_SIZE
 local BAR_HEIGHT = BASE_BAR_HEIGHT
@@ -116,7 +119,8 @@ markersContainer.Parent = container
 local iconsContainer = Instance.new("Frame")
 iconsContainer.Name = "IconsContainer"
 iconsContainer.Size = UDim2.new(1, 0, 0, LANE_HEIGHT * MAX_LANES)
-iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 40)
+-- iconsContainer offset: moved closer to bar (smaller positive offset)
+iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 20)
 iconsContainer.BackgroundTransparency = 1
 iconsContainer.Parent = container
 
@@ -134,11 +138,15 @@ local function resizeUI()
 	barBackground.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
 	markersContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
 	iconsContainer.Size = UDim2.new(1, 0, 0, LANE_HEIGHT * MAX_LANES)
-	iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 40)
+	iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 20)
 	
 	-- Resize all player icons
 	for _, icon in pairs(playerIcons) do
-		icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
+		local size = ICON_SIZE
+		if viewMode == "global" then
+			size = math.floor(ICON_SIZE * GLOBAL_ICON_SCALE)
+		end
+		icon.Size = UDim2.new(0, size, 0, size)
 	end
 end
 
@@ -320,7 +328,11 @@ local function createPlayerIcon(player)
 	
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Name = player.Name .. "_Icon"
-	iconFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
+	local initialSize = ICON_SIZE
+	if viewMode == "global" then
+		initialSize = math.floor(ICON_SIZE * GLOBAL_ICON_SCALE)
+	end
+	iconFrame.Size = UDim2.new(0, initialSize, 0, initialSize)
 	iconFrame.Position = UDim2.new(0, 0, 0, 0)
 	iconFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	iconFrame.BorderSizePixel = 0
@@ -493,6 +505,7 @@ local function toggleMode()
 	else
 		viewMode = "global"
 	end
+	resizeUI()
 	rebuildUI()
 end
 

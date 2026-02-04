@@ -12,6 +12,8 @@ end
 
 local screenGui
 local coinLabel
+-- UI scale multiplier for easy resizing
+local UI_SCALE = 1.15
 
 local function createGui()
 	-- clean up existing if present
@@ -25,35 +27,83 @@ local function createGui()
 	screenGui.Parent = player:WaitForChild("PlayerGui")
 	screenGui.Enabled = false -- Start hidden
 
-	coinLabel = Instance.new("TextLabel")
-	coinLabel.Name = "CoinLabel"
-	coinLabel.Size = UDim2.new(0, 180, 0, 50)
-	coinLabel.Position = UDim2.new(1, -190, 1, -70) -- Bottom right, moved up slightly
-	coinLabel.AnchorPoint = Vector2.new(0, 0)
-	coinLabel.BackgroundTransparency = 0
-	coinLabel.BackgroundColor3 = Color3.fromRGB(100, 180, 255) -- Match button color
-	coinLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Match button text
-	coinLabel.Font = Enum.Font.FredokaOne -- Match button font
-	coinLabel.TextScaled = true
-	coinLabel.Text = "Coins: 0"
-	coinLabel.Parent = screenGui
+	-- Container centered above the progress bar
+		local coinContainer = Instance.new("Frame")
+		coinContainer.Name = "CoinContainer"
+		coinContainer.Size = UDim2.new(0, math.floor(200 * UI_SCALE), 0, math.floor(90 * UI_SCALE))
+		local screenY = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize and workspace.CurrentCamera.ViewportSize.Y or 1080
+		local downOffset = math.floor(screenY * 0.04 * UI_SCALE) -- ~4% down, scaled
+		coinContainer.Position = UDim2.new(1, -math.floor(180 * UI_SCALE), 1, -math.floor(100 * UI_SCALE) + downOffset)
+	coinContainer.AnchorPoint = Vector2.new(0, 0)
+	coinContainer.BackgroundTransparency = 1
+	coinContainer.Parent = screenGui
 
-	local coinCorner = Instance.new("UICorner")
-	coinCorner.CornerRadius = UDim.new(0.25, 0)
-	coinCorner.Parent = coinLabel
-	local coinStroke = Instance.new("UIStroke")
-	coinStroke.Color = Color3.fromRGB(50, 100, 150)
-	coinStroke.Thickness = 3
-	coinStroke.Parent = coinLabel
-	local coinTextStroke = Instance.new("UIStroke")
-	coinTextStroke.Color = Color3.fromRGB(50, 100, 150)
-	coinTextStroke.Thickness = 1.5
-	coinTextStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-	coinTextStroke.Parent = coinLabel
-	local coinGradient = Instance.new("UIGradient")
-	coinGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
-	coinGradient.Rotation = 90
-	coinGradient.Parent = coinLabel
+	-- Top label centered
+	local topLabel = Instance.new("TextLabel")
+	topLabel.Name = "CoinsLabel"
+		topLabel.Size = UDim2.new(0, math.floor(160 * UI_SCALE), 0, math.floor(28 * UI_SCALE))
+		topLabel.Position = UDim2.new(0.5, 0, 0, math.floor(6 * UI_SCALE))
+	topLabel.AnchorPoint = Vector2.new(0.5, 0)
+	topLabel.BackgroundTransparency = 1
+	topLabel.Text = "Coins"
+	topLabel.Font = Enum.Font.FredokaOne
+	topLabel.TextScaled = true
+	topLabel.TextColor3 = Color3.fromRGB(255,255,255)
+	topLabel.Parent = coinContainer
+		local topStroke = Instance.new("UIStroke")
+		topStroke.Color = Color3.fromRGB(50,100,150)
+		topStroke.Thickness = 2
+		topStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		topStroke.Parent = topLabel
+
+	-- Bar background (full-width visual)
+	local barBg = Instance.new("Frame")
+	barBg.Name = "CoinBarBackground"
+		-- halve the bar width for a more compact look
+		barBg.Size = UDim2.new(0, math.floor(100 * UI_SCALE), 0, math.floor(22 * UI_SCALE))
+		barBg.Position = UDim2.new(0.5, 0, 0, math.floor(36 * UI_SCALE))
+	barBg.AnchorPoint = Vector2.new(0.5, 0)
+		barBg.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+	barBg.BorderSizePixel = 0
+	barBg.Parent = coinContainer
+
+	local bgCorner = Instance.new("UICorner")
+	bgCorner.CornerRadius = UDim.new(0,6)
+	bgCorner.Parent = barBg
+
+	local barStroke = Instance.new("UIStroke")
+	barStroke.Color = Color3.fromRGB(50, 100, 150)
+	barStroke.Thickness = 3
+	barStroke.Parent = barBg
+
+	local barGradient = Instance.new("UIGradient")
+	barGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200))
+	barGradient.Rotation = 90
+	barGradient.Parent = barBg
+
+	-- Number displayed centered inside the bar
+	local numberInBar = Instance.new("TextLabel")
+	numberInBar.Name = "NumberInBar"
+	numberInBar.Size = UDim2.new(1, -8, 1, 0)
+		numberInBar.Position = UDim2.new(0.5, 0, 0.5, 0)
+		numberInBar.AnchorPoint = Vector2.new(0.5, 0.5)
+		numberInBar.TextXAlignment = Enum.TextXAlignment.Center
+		numberInBar.TextYAlignment = Enum.TextYAlignment.Center
+	numberInBar.BackgroundTransparency = 1
+	numberInBar.Font = Enum.Font.FredokaOne
+	numberInBar.TextScaled = true
+	numberInBar.TextColor3 = Color3.fromRGB(255,255,255)
+	numberInBar.Text = "0"
+	numberInBar.Parent = barBg
+
+	local numStroke = Instance.new("UIStroke")
+		numStroke.Color = Color3.fromRGB(50,100,150)
+		numStroke.Thickness = 2
+		numStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		numStroke.Parent = numberInBar
+
+	-- Expose numberInBar for updates
+	coinLabel = numberInBar
 
 	-- Hide/show based on main menu state for this GUI
 	task.spawn(function()
@@ -112,7 +162,9 @@ end)
 
 -- Update coin count
 local function updateCoins(amount)
-	coinLabel.Text = "Coins: " .. tostring(amount)
+	if coinLabel then
+		coinLabel.Text = tostring(amount)
+	end
 	print("[CoinUI] Updated coins to", amount)
 end
 
