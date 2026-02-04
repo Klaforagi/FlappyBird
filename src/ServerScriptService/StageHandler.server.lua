@@ -14,6 +14,28 @@ end
 if not CoinHandler then
 	warn("[StageHandler] Could not find ModuleScript 'CoinHandler' in ServerScriptService")
 end
+-- Ensure ReplicatedStorage.Events and required RemoteEvents exist (idempotent)
+do
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local eventsFolder = ReplicatedStorage:FindFirstChild("Events")
+	if not eventsFolder then
+		eventsFolder = Instance.new("Folder")
+		eventsFolder.Name = "Events"
+		eventsFolder.Parent = ReplicatedStorage
+	end
+
+	if not eventsFolder:FindFirstChild("CoinPickupEvent") then
+		local pickupEvent = Instance.new("RemoteEvent")
+		pickupEvent.Name = "CoinPickupEvent"
+		pickupEvent.Parent = eventsFolder
+	end
+
+	if not eventsFolder:FindFirstChild("PlaySound") then
+		local playEvent = Instance.new("RemoteEvent")
+		playEvent.Name = "PlaySound"
+		playEvent.Parent = eventsFolder
+	end
+end
 -- recentTouches[player][stagePart] = last touch time (debounce)
 local recentTouches = {}
 local function getAllStages(parent)
@@ -89,6 +111,14 @@ local function onStageTouched(otherPart, stagePart)
 	print("[StageHandler] Awarding 1 coin to", player.Name, "for touching stage part", stagePart.Name, "value", stageValue)
 	if CoinHandler then
 		CoinHandler.awardCoins(player, 1)
+		-- Tell the client to play coin collect sound (if available)
+		local eventsFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
+		if eventsFolder then
+			local playEvent = eventsFolder:FindFirstChild("PlaySound")
+			if playEvent and playEvent:IsA("RemoteEvent") then
+				playEvent:FireClient(player, "Coin_collect")
+			end
+		end
 	else
 		warn("[StageHandler] CoinHandler module not found; cannot award coins")
 	end

@@ -21,13 +21,14 @@ local function createGui()
 
 	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "CoinGui"
+	screenGui.ResetOnSpawn = false -- persist across character respawns
 	screenGui.Parent = player:WaitForChild("PlayerGui")
 	screenGui.Enabled = false -- Start hidden
 
 	coinLabel = Instance.new("TextLabel")
 	coinLabel.Name = "CoinLabel"
 	coinLabel.Size = UDim2.new(0, 180, 0, 50)
-	coinLabel.Position = UDim2.new(1, -190, 1, -60) -- Bottom right
+	coinLabel.Position = UDim2.new(1, -190, 1, -70) -- Bottom right, moved up slightly
 	coinLabel.AnchorPoint = Vector2.new(0, 0)
 	coinLabel.BackgroundTransparency = 0
 	coinLabel.BackgroundColor3 = Color3.fromRGB(100, 180, 255) -- Match button color
@@ -65,16 +66,7 @@ local function createGui()
 		end
 	end)
 
-	-- Reattach ancestry watcher: if GUI removed, recreate it
-	screenGui.AncestryChanged:Connect(function(child, parent)
-		if not parent then
-			task.delay(0.1, function()
-				if not screenGui or not screenGui.Parent then
-					createGui()
-				end
-			end)
-		end
-	end)
+	-- No ancestry watcher: we keep this GUI persistent across respawns
 end
 
 -- Create initial GUI
@@ -102,7 +94,18 @@ local function ensureGui()
 end
 
 player.CharacterAdded:Connect(function()
-	task.delay(0.1, ensureGui)
+	-- Don't recreate/reparent the GUI on respawn; just request current coin count
+	task.delay(0.1, function()
+		if requestEvent then
+			requestEvent:FireServer()
+		else
+			local ev = ReplicatedStorage:FindFirstChild("Events")
+			if ev then
+				local req = ev:FindFirstChild("RequestCoinCount")
+				if req then req:FireServer() end
+			end
+		end
+	end)
 end)
 
 -- (Ancestry watcher is attached inside createGui)

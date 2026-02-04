@@ -6,9 +6,10 @@ local TOTAL_STAGES = 500
 local STAGES_PER_ZONE = 50
 -- Base sizes (designed for 1080p, will scale with screen)
 local BASE_SCREEN_HEIGHT = 1080
+-- Adjusted base sizes: revert icon size, keep larger bar for readability
 local BASE_ICON_SIZE = 50
-local BASE_BAR_HEIGHT = 12
-local BASE_LANE_HEIGHT = 36
+local BASE_BAR_HEIGHT = 24
+local BASE_LANE_HEIGHT = 72
 local MAX_LANES = 4
 
 -- Dynamic sizes (computed from screen size)
@@ -52,7 +53,7 @@ end)
 -- Main container at bottom
 local container = Instance.new("Frame")
 container.Name = "ProgressContainer"
-container.Size = UDim2.new(0.8, 0, 0, LANE_HEIGHT * MAX_LANES + BAR_HEIGHT + 20)
+	container.Size = UDim2.new(0.75, 0, 0, LANE_HEIGHT * MAX_LANES + BAR_HEIGHT + 20)
 container.Position = UDim2.new(0.5, 0, 1, -10)
 container.AnchorPoint = Vector2.new(0.5, 1)
 container.BackgroundTransparency = 1
@@ -115,7 +116,7 @@ markersContainer.Parent = container
 local iconsContainer = Instance.new("Frame")
 iconsContainer.Name = "IconsContainer"
 iconsContainer.Size = UDim2.new(1, 0, 0, LANE_HEIGHT * MAX_LANES)
-iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES - 5)
+iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 40)
 iconsContainer.BackgroundTransparency = 1
 iconsContainer.Parent = container
 
@@ -126,23 +127,18 @@ local playerLanes = {}
 -- Function to resize container and children when screen changes
 local function resizeUI()
 	updateSizes()
-	container.Size = UDim2.new(0.8, 0, 0, LANE_HEIGHT * MAX_LANES + BAR_HEIGHT + 20)
+	container.Size = UDim2.new(0.75, 0, 0, LANE_HEIGHT * MAX_LANES + BAR_HEIGHT + 20)
 	clickArea.Size = UDim2.new(1, 0, 0, BAR_HEIGHT + 30)
 	clickArea.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - 15)
 	barBackground.Size = UDim2.new(1, 0, 0, BAR_HEIGHT)
 	barBackground.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
 	markersContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT)
 	iconsContainer.Size = UDim2.new(1, 0, 0, LANE_HEIGHT * MAX_LANES)
-	iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES - 5)
+	iconsContainer.Position = UDim2.new(0, 0, 1, -BAR_HEIGHT - LANE_HEIGHT * MAX_LANES + 40)
 	
 	-- Resize all player icons
 	for _, icon in pairs(playerIcons) do
 		icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
-		local nameLabel = icon:FindFirstChild("NameLabel")
-		if nameLabel then
-			nameLabel.Size = UDim2.new(0, ICON_SIZE * 1.875, 0, ICON_SIZE * 0.44)
-			nameLabel.TextSize = math.floor(11 * (ICON_SIZE / BASE_ICON_SIZE))
-		end
 	end
 end
 
@@ -359,19 +355,7 @@ local function createPlayerIcon(player)
 		stroke.Parent = iconFrame
 	end
 	
-	-- Name label below icon
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Name = "NameLabel"
-	nameLabel.Size = UDim2.new(0, ICON_SIZE * 1.875, 0, ICON_SIZE * 0.44)
-	nameLabel.Position = UDim2.new(0.5, 0, 1, 2)
-	nameLabel.AnchorPoint = Vector2.new(0.5, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = player == LocalPlayer and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(255, 255, 255)
-	nameLabel.TextSize = math.floor(11 * (ICON_SIZE / BASE_ICON_SIZE))
-	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.Text = player.DisplayName
-	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
-	nameLabel.Parent = iconFrame
+	-- (name label intentionally removed; icons show headshots only)
 	
 	playerIcons[player] = iconFrame
 	playerLanes[player] = 0

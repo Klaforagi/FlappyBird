@@ -50,7 +50,6 @@ function CoinHandler.init()
     Players.PlayerAdded:Connect(function(player)
         local coins = loadCoins(player)
         playerCoins[player] = coins
-        coinEvent:FireClient(player, coins)
     end)
 
     Players.PlayerRemoving:Connect(function(player)
