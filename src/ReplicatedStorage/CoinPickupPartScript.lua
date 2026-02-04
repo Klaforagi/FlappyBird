@@ -3,7 +3,8 @@
 -- Place this in a coin part (e.g., workspace) and set up the part as needed
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CoinPickupEvent = ReplicatedStorage:WaitForChild("CoinPickupEvent")
+local eventsFolder = ReplicatedStorage:WaitForChild("Events")
+local CoinPickupEvent = eventsFolder:WaitForChild("CoinPickupEvent")
 
 local coinPart = script.Parent
 local COIN_VALUE = 1 -- Change as needed

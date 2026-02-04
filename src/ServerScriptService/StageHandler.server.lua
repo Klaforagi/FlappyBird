@@ -3,6 +3,19 @@ local DataStoreService = game:GetService("DataStoreService")
 local highScoreStore = DataStoreService:GetDataStore("FlappyHighScores")
 
 -- Recursive function to collect all parts that are stages
+-- Safely find the ModuleScript named "CoinHandler" (avoid requiring a plain Script)
+local CoinHandler = nil
+for _, child in ipairs(game:GetService("ServerScriptService"):GetChildren()) do
+	if child.Name == "CoinHandler" and child.ClassName == "ModuleScript" then
+		CoinHandler = require(child)
+		break
+	end
+end
+if not CoinHandler then
+	warn("[StageHandler] Could not find ModuleScript 'CoinHandler' in ServerScriptService")
+end
+-- recentTouches[player][stagePart] = last touch time (debounce)
+local recentTouches = {}
 local function getAllStages(parent)
 	local stages = {}
 	for _, obj in ipairs(parent:GetChildren()) do
@@ -35,6 +48,11 @@ local function isAliveCharacter(part)
 end
 
 local function onStageTouched(otherPart, stagePart)
+	-- Only count touches from the HumanoidRootPart to avoid multiple body-part triggers
+	if not otherPart or otherPart.Name ~= "HumanoidRootPart" then
+		return
+	end
+
 	local player = isAliveCharacter(otherPart)
 	if not player then return end
 
@@ -58,9 +76,22 @@ local function onStageTouched(otherPart, stagePart)
 		highScore.Value = stageValue
 	end
 	
-	-- Award 1 coin for completing a stage
-	local CoinHandler = require(game.ServerScriptService:WaitForChild("CoinHandler"))
-	CoinHandler.awardCoins(player, 1)
+	-- Debounce repeated touch events for same player and stage part
+	recentTouches[player] = recentTouches[player] or {}
+	local now = tick()
+	local last = recentTouches[player][stagePart]
+	if last and now - last < 0.5 then
+		return
+	end
+	recentTouches[player][stagePart] = now
+
+	-- Award 1 coin immediately when stage number is updated by the stage part
+	print("[StageHandler] Awarding 1 coin to", player.Name, "for touching stage part", stagePart.Name, "value", stageValue)
+	if CoinHandler then
+		CoinHandler.awardCoins(player, 1)
+	else
+		warn("[StageHandler] CoinHandler module not found; cannot award coins")
+	end
 end
 
 -- DataStore helpers
@@ -94,6 +125,8 @@ Players.PlayerAdded:Connect(function(player)
 	end
 
 	-- CharacterAdded no longer resets Stage - CheckpointHandler handles respawn positioning
+
+	-- No per-player prev tracking needed when stage part handles awarding
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -103,6 +136,8 @@ Players.PlayerRemoving:Connect(function(player)
 		local key = "HighScore_" .. player.UserId
 		tryDS(highScoreStore.SetAsync, highScoreStore, key, highScore.Value)
 	end
+	-- cleanup debounce table
+	recentTouches[player] = nil
 end)
 
 for _, stagePart in ipairs(stages) do
@@ -110,3 +145,6 @@ for _, stagePart in ipairs(stages) do
 		onStageTouched(otherPart, stagePart)
 	end)
 end
+
+	-- Initialize CoinHandler module
+	CoinHandler.init()
