@@ -128,6 +128,15 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 		local ReplicatedStorage = game:GetService("ReplicatedStorage")
 		local events = ReplicatedStorage:WaitForChild("Events")
 		local ev = events:WaitForChild("FlappyModeChanged")
+		
+		-- Listen for server telling us to enable FlappyMode (e.g. after Continue)
+		ev.OnClientEvent:Connect(function(newVal)
+			if type(newVal) == "boolean" then
+				flappyMode.Value = newVal
+			end
+		end)
+		
+		-- Notify server when FlappyMode changes locally
 		flappyMode.Changed:Connect(function(newVal)
 			if type(newVal) == "boolean" then
 				pcall(function() ev:FireServer(newVal) end)

@@ -4,6 +4,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local RespawnEvent = ReplicatedStorage:WaitForChild("RespawnEvent")
+local ContinueEvent = ReplicatedStorage:WaitForChild("ContinueEvent")
+
+-- Store stage at death for continue button
+local deathStage = 0
 
 -- Create the death menu UI
 local function createDeathMenu()
@@ -69,11 +73,11 @@ local function createDeathMenu()
 	stageStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	stageStroke.Parent = stageLabel
 	
-	-- Respawn button
+	-- Respawn button (left side)
 	local respawnButton = Instance.new("TextButton")
 	respawnButton.Name = "RespawnButton"
-	respawnButton.Size = UDim2.new(0.6, 0, 0.25, 0)
-	respawnButton.Position = UDim2.new(0.5, 0, 0.65, 0)
+	respawnButton.Size = UDim2.new(0.35, 0, 0.25, 0)
+	respawnButton.Position = UDim2.new(0.27, 0, 0.65, 0)
 	respawnButton.AnchorPoint = Vector2.new(0.5, 0)
 	respawnButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	respawnButton.BorderSizePixel = 0
@@ -105,12 +109,41 @@ local function createDeathMenu()
 		RespawnEvent:FireServer()
 	end)
 	
+	-- Continue button (right side)
+	local continueButton = Instance.new("TextButton")
+	continueButton.Name = "ContinueButton"
+	continueButton.Size = UDim2.new(0.35, 0, 0.25, 0)
+	continueButton.Position = UDim2.new(0.73, 0, 0.65, 0)
+	continueButton.AnchorPoint = Vector2.new(0.5, 0)
+	continueButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	continueButton.BorderSizePixel = 0
+	continueButton.Text = "Continue"
+	continueButton.TextColor3 = Color3.fromRGB(100, 180, 255)
+	continueButton.Font = Enum.Font.FredokaOne
+	continueButton.TextScaled = true
+	continueButton.Parent = menuFrame
+	local continueCorner = Instance.new("UICorner")
+	continueCorner.CornerRadius = UDim.new(0.25, 0)
+	continueCorner.Parent = continueButton
+	local continueStroke = Instance.new("UIStroke")
+	continueStroke.Color = Color3.fromRGB(50, 100, 150)
+	continueStroke.Thickness = 3
+	continueStroke.Parent = continueButton
+	
+	-- Continue functionality
+	continueButton.MouseButton1Click:Connect(function()
+		screenGui.Enabled = false
+		ContinueEvent:FireServer(deathStage)
+	end)
+	
 	screenGui.Parent = PlayerGui
 	return screenGui
 end
 
 -- Show death menu with stage info
 local function showDeathMenu(stageValue)
+	deathStage = stageValue  -- Store for continue button
+	
 	local deathMenu = PlayerGui:FindFirstChild("DeathMenu")
 	if not deathMenu then
 		deathMenu = createDeathMenu()

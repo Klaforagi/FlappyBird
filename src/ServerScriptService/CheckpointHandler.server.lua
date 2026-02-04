@@ -27,6 +27,19 @@ local function getRespawnCheckpoint(stageValue, checkpointParts)
 	return best
 end
 
+-- Find checkpoint with specific value
+local function getCheckpointByValue(value)
+	for _, obj in ipairs(checkpointsFolder:GetChildren()) do
+		if obj:IsA("BasePart") then
+			local v = obj:GetAttribute("Value")
+			if v == value then
+				return obj
+			end
+		end
+	end
+	return nil
+end
+
 Players.PlayerAdded:Connect(function(player)
 	local firstSpawn = true
 	
@@ -37,9 +50,20 @@ Players.PlayerAdded:Connect(function(player)
 		local stageVal = leaderstats:FindFirstChild("Stage")
 		local currentStage = (stageVal and stageVal.Value) or 0
 
-		-- Skip checkpoint teleport on first spawn (for testing purposes)
+		-- On first spawn, teleport to checkpoint 0
 		if firstSpawn then
 			firstSpawn = false
+			task.wait()  -- Let spawn finish
+			local startCheckpoint = getCheckpointByValue(0)
+			if startCheckpoint and hrp then
+				hrp.CFrame = startCheckpoint.CFrame + Vector3.new(0, 4, 0)
+			end
+			return
+		end
+		
+		-- Skip if player is using Continue (they get positioned by RespawnHandler)
+		task.wait()  -- Let attribute be set first
+		if player:GetAttribute("IsContinuing") == true then
 			return
 		end
 
