@@ -107,16 +107,22 @@ local function onStageTouched(otherPart, stagePart)
 	end
 	recentTouches[player][stagePart] = now
 
-	-- Award 1 coin immediately when stage number is updated by the stage part
-	print("[StageHandler] Awarding 1 coin to", player.Name, "for touching stage part", stagePart.Name, "value", stageValue)
+	-- Decide coin award: 5 coins when stageValue cleanly divisible by 10, otherwise 1 coin
+	local awardAmount = 1
+	if type(stageValue) == "number" and (stageValue % 10) == 0 then
+		awardAmount = 5
+	end
+	print("[StageHandler] Awarding", awardAmount, "coin(s) to", player.Name, "for touching stage part", stagePart.Name, "value", stageValue)
 	if CoinHandler then
-		CoinHandler.awardCoins(player, 1)
-		-- Tell the client to play coin collect sound (if available)
-		local eventsFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
-		if eventsFolder then
-			local playEvent = eventsFolder:FindFirstChild("PlaySound")
-			if playEvent and playEvent:IsA("RemoteEvent") then
-				playEvent:FireClient(player, "Coin_collect")
+		CoinHandler.awardCoins(player, awardAmount)
+		-- Only play coin collect sound when awarding the 5-coin milestone
+		if awardAmount == 5 then
+			local eventsFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
+			if eventsFolder then
+				local playEvent = eventsFolder:FindFirstChild("PlaySound")
+				if playEvent and playEvent:IsA("RemoteEvent") then
+					playEvent:FireClient(player, "Coin_collect")
+				end
 			end
 		end
 	else

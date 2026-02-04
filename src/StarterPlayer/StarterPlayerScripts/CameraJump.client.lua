@@ -122,6 +122,18 @@ local function setupFlappyMode(char, hrp, humanoid, cam, controls)
 	
 	-- Listen for flappy mode changes
 	flappyMode.Changed:Connect(updateControls)
+
+	-- Notify server when FlappyMode changes so server can toggle biome collisions
+	coroutine.wrap(function()
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local events = ReplicatedStorage:WaitForChild("Events")
+		local ev = events:WaitForChild("FlappyModeChanged")
+		flappyMode.Changed:Connect(function(newVal)
+			if type(newVal) == "boolean" then
+				pcall(function() ev:FireServer(newVal) end)
+			end
+		end)
+	end)()
 	
 	-- Set initial state
 	updateControls()

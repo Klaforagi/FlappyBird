@@ -7,6 +7,8 @@ local humanoid = char:WaitForChild("Humanoid")
 local flappyMode = char:WaitForChild("FlappyMode")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
 -- Mobile = has touch, PC = no touch (simpler detection)
 local isMobile = UIS.TouchEnabled
@@ -195,4 +197,54 @@ if flappyMode.Value then
 	enableFlappyMove()
 else
 	enableManualMove()
+end
+
+-- Play custom jump sound and mute default character jump sounds
+local player = Players:GetPlayerFromCharacter(char)
+
+local function playCustomJump()
+	if not player then
+		player = Players:GetPlayerFromCharacter(char)
+		if not player then return end
+	end
+	local soundsFolder = ReplicatedStorage:FindFirstChild("Sounds")
+	if not soundsFolder then return end
+	local template = soundsFolder:FindFirstChild("Jump")
+	if not template then return end
+	local playerGui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui", 5)
+	if not playerGui then return end
+	local s = template:Clone()
+	s.Parent = playerGui
+	if s:IsA("Sound") then
+		pcall(function() s:Play() end)
+		local con
+		con = s.Ended:Connect(function()
+			if s then s:Destroy() end
+			if con then con:Disconnect() end
+		end)
+	else
+		s:Destroy()
+	end
+end
+
+local function muteCharacterJumpSounds()
+	for _, v in ipairs(char:GetDescendants()) do
+		if v:IsA("Sound") and string.match(string.lower(v.Name), "jump") then
+			v.Volume = 0
+		end
+	end
+	char.DescendantAdded:Connect(function(desc)
+		if desc:IsA("Sound") and string.match(string.lower(desc.Name), "jump") then
+			desc.Volume = 0
+		end
+	end)
+end
+
+if humanoid then
+	humanoid.Jumping:Connect(function(active)
+		if active then
+			muteCharacterJumpSounds()
+			playCustomJump()
+		end
+	end)
 end
