@@ -85,12 +85,26 @@ continueEvent.OnServerEvent:Connect(function(player, stageNum)
 		
 		if hrp then
 			-- Position at stage X/Z, Y=6
-			local targetCFrame = CFrame.new(targetPart.Position.X, 6, targetPart.Position.Z)
-			hrp.CFrame = targetCFrame
-			hrp.Anchored = true
-			-- Zero velocity to prevent any drift
-			hrp.AssemblyLinearVelocity = Vector3.zero
-			hrp.AssemblyAngularVelocity = Vector3.zero
+			-- Position slightly ahead of the stage part along its local X (forward)
+			local forwardOffset = 5
+			local spawnPos = targetPart.Position + (targetPart.CFrame.RightVector * forwardOffset) + Vector3.new(0, 6, 0)
+			local targetCFrame = CFrame.new(spawnPos)
+			pcall(function()
+				hrp.CFrame = targetCFrame
+				hrp.Anchored = true
+				hrp.AssemblyLinearVelocity = Vector3.zero
+				hrp.AssemblyAngularVelocity = Vector3.zero
+			end)
+			-- Reinforce position after a short delay in case spawn logic moves the character
+			task.delay(0.05, function()
+				pcall(function()
+					if hrp and hrp.Parent then
+						hrp.CFrame = targetCFrame
+						hrp.AssemblyLinearVelocity = Vector3.zero
+						hrp.AssemblyAngularVelocity = Vector3.zero
+					end
+				end)
+			end)
 		end
 		
 		if humanoid then

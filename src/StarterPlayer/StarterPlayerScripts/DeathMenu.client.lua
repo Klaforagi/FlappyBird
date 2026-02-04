@@ -133,7 +133,38 @@ local function createDeathMenu()
 	-- Continue functionality
 	continueButton.MouseButton1Click:Connect(function()
 		screenGui.Enabled = false
+		-- Fire server to request continue/resume at stage
 		ContinueEvent:FireServer(deathStage)
+
+		-- Show local 3-second countdown UI
+		-- Avoid duplicate countdowns
+		local existing = PlayerGui:FindFirstChild("ContinueCountdownGui")
+		if existing then existing:Destroy() end
+
+		local countdownGui = Instance.new("ScreenGui")
+		countdownGui.Name = "ContinueCountdownGui"
+		countdownGui.ResetOnSpawn = false
+		countdownGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		countdownGui.Parent = PlayerGui
+
+		local label = Instance.new("TextLabel")
+		label.Name = "CountdownLabel"
+		label.Size = UDim2.new(0.4, 0, 0.18, 0)
+		label.Position = UDim2.new(0.5, 0, 0.5, 0)
+		label.AnchorPoint = Vector2.new(0.5, 0.5)
+		label.BackgroundTransparency = 0.4
+		label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.Font = Enum.Font.FredokaOne
+		label.TextScaled = true
+		label.Parent = countdownGui
+
+		for i = 3, 1, -1 do
+			label.Text = "Continuing in " .. tostring(i) .. "..."
+			task.wait(1)
+		end
+
+		countdownGui:Destroy()
 	end)
 	
 	screenGui.Parent = PlayerGui
