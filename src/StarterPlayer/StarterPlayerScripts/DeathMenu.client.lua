@@ -7,6 +7,22 @@ local RespawnEvent = ReplicatedStorage:WaitForChild("RespawnEvent")
 local ContinueEvent = ReplicatedStorage:WaitForChild("ContinueEvent")
 local ContinueResponse = ReplicatedStorage:FindFirstChild("ContinueResponse")
 
+-- Stage name mapping for continue menu (add more entries here as needed)
+local StageNameMap = {
+	{min = 0, max = 49, name = "Green Meadows"},
+	{min = 50, max = 99, name = "Sunny Beach"},
+	{min = 100, max = 149, name = "Sakura Fields"},
+}
+
+local function getStageName(stage)
+	for _, entry in ipairs(StageNameMap) do
+		if stage >= entry.min and stage <= entry.max then
+			return entry.name
+		end
+	end
+	return "Unknown"
+end
+
 -- Store stage at death for continue button
 local deathStage = 0
 
@@ -83,6 +99,7 @@ local function createDeathMenu()
 	respawnButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	respawnButton.BorderSizePixel = 0
 	respawnButton.Text = "Respawn"
+	respawnButton.Text = "Restart"
 	respawnButton.TextColor3 = Color3.fromRGB(100, 180, 255)
 	respawnButton.Font = Enum.Font.FredokaOne
 	respawnButton.TextScaled = true
@@ -130,6 +147,32 @@ local function createDeathMenu()
 	continueStroke.Color = Color3.fromRGB(50, 100, 150)
 	continueStroke.Thickness = 3
 	continueStroke.Parent = continueButton
+
+	-- Cost label shown under Continue button
+	local costLabel = Instance.new("TextLabel")
+	costLabel.Name = "ContinueCostLabel"
+	costLabel.Size = UDim2.new(0.35, 0, 0.08, 0)
+	costLabel.Position = UDim2.new(0.73, 0, 0.92, 0)
+	costLabel.AnchorPoint = Vector2.new(0.5, 0)
+	costLabel.BackgroundTransparency = 1
+	costLabel.Text = "20 coins"
+	costLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
+	costLabel.Font = Enum.Font.FredokaOne
+	costLabel.TextScaled = true
+	costLabel.Parent = menuFrame
+
+	-- Stage name label under Restart (left) button, white text
+	local stageNameLabel = Instance.new("TextLabel")
+	stageNameLabel.Name = "StageNameLabel"
+	stageNameLabel.Size = UDim2.new(0.35, 0, 0.08, 0)
+	stageNameLabel.Position = UDim2.new(0.27, 0, 0.92, 0)
+	stageNameLabel.AnchorPoint = Vector2.new(0.5, 0)
+	stageNameLabel.BackgroundTransparency = 1
+	stageNameLabel.Text = "Green Meadows"
+	stageNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	stageNameLabel.Font = Enum.Font.FredokaOne
+	stageNameLabel.TextScaled = true
+	stageNameLabel.Parent = menuFrame
 	
 	-- Continue functionality
 	continueButton.MouseButton1Click:Connect(function()
@@ -238,7 +281,13 @@ local function showDeathMenu(stageValue)
 	if stageLabel then
 		stageLabel.Text = "You reached Stage " .. tostring(stageValue)
 	end
-	
+
+	-- Update and show stage name based on the mapping
+	local nameLabel = deathMenu:FindFirstChild("MenuFrame"):FindFirstChild("StageNameLabel")
+	if nameLabel then
+		nameLabel.Text = getStageName(stageValue)
+	end
+
 	deathMenu.Enabled = true
 end
 
