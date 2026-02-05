@@ -216,7 +216,7 @@ local function createMainMenu()
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.Size = UDim2.new(0.8, 0, 0.2, 0)
-	title.Position = UDim2.new(0.5, 0, 0.15, 0)
+	title.Position = UDim2.new(0.5, 0, 0.25, 0)
 	title.AnchorPoint = Vector2.new(0.5, 0.5)
 	title.BackgroundTransparency = 1
 	title.Text = "FLAPPY BLOX"
