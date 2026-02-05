@@ -25,13 +25,7 @@ local PlayEvent = ReplicatedStorage:WaitForChild("PlayEvent")
 
 local menuOpen = true
 
--- Static camera position from Studio
-local CAMERA_START_POS = Vector3.new(-187.951, 6.347, -123.057)
-local CAMERA_START_ORIENTATION = Vector3.new(-9.931, -28.403, 0) -- pitch, yaw, roll in degrees
-
-local CAMERA_END_POS = Vector3.new(-140.577, 4.46, -122.969)
-local CAMERA_END_ORIENTATION = Vector3.new(-4.232, -36.002, 0)
-
+-- Camera segments (start -> end). Each has a start position/orientation and an end position/orientation.
 local CAMERA_FOV = 70
 
 -- Panning settings
@@ -39,10 +33,34 @@ local PAN_DURATION = 15 -- seconds to reach end point
 local FADE_DURATION = 0.5
 local FADE_OPACITY = 0 -- fully black
 
+local CAMERA_SEGMENTS = {
+	-- Segment 1 (original)
+	{
+		startPos = Vector3.new(-187.951, 6.347, -123.057),
+		startOri = Vector3.new(-9.931, -28.403, 0),
+		endPos = Vector3.new(-140.577, 4.46, -122.969),
+		endOri = Vector3.new(-4.232, -36.002, 0),
+	},
+	-- Segment 2 (user-provided: image 1 = start, image 2 = end)
+	{
+		startPos = Vector3.new(1417.235, 8.489, -127.705),
+		startOri = Vector3.new(-12.553, -38.356, 0),
+		endPos = Vector3.new(1515.346, 0.48, -131.818),
+		endOri = Vector3.new(-8.048, -42.749, 0),
+	},
+	-- Segment 3 (user-provided: image 3 = start, image 4 = end)
+	{
+		startPos = Vector3.new(3063.26, 10.982, -120.869),
+		startOri = Vector3.new(-16.151, -27.949, 0),
+		endPos = Vector3.new(3164.188, 4.842, -111.1),
+		endOri = Vector3.new(-7.747, -34.795, 0),
+	},
+}
+
 -- Positions to stream in for full map visibility (grid covering visible area)
 local STREAM_POSITIONS = {
-	CAMERA_START_POS,
-	CAMERA_END_POS,
+	CAMERA_SEGMENTS[1].startPos,
+	CAMERA_SEGMENTS[1].endPos,
 	-- Grid of positions to load more of the map
 	Vector3.new(-200, 10, -160),
 	Vector3.new(-200, 10, -140),
@@ -67,12 +85,14 @@ local cameraConnection = nil
 local fadeOverlay = nil
 
 -- Build the camera CFrame by interpolating between start and end
-local function getMenuCameraCFrame(alpha)
+local function getMenuCameraCFrame(alpha, segIndex)
 	alpha = alpha or 0
+	segIndex = segIndex or 1
+	local seg = CAMERA_SEGMENTS[segIndex] or CAMERA_SEGMENTS[1]
 	-- Lerp position
-	local pos = CAMERA_START_POS:Lerp(CAMERA_END_POS, alpha)
+	local pos = seg.startPos:Lerp(seg.endPos, alpha)
 	-- Lerp orientation
-	local orientation = CAMERA_START_ORIENTATION:Lerp(CAMERA_END_ORIENTATION, alpha)
+	local orientation = seg.startOri:Lerp(seg.endOri, alpha)
 	local pitch = math.rad(orientation.X)
 	local yaw = math.rad(orientation.Y)
 	local roll = math.rad(orientation.Z)
@@ -130,13 +150,14 @@ end
 local function startMenuCamera()
 	Camera.CameraType = Enum.CameraType.Scriptable
 	Camera.FieldOfView = CAMERA_FOV
-	
+
 	local startTime = tick()
 	local hasFadedOut = false
 	local needsFadeIn = true
-	
-	Camera.CFrame = getMenuCameraCFrame(0)
-	
+	local segmentIndex = 1
+
+	Camera.CFrame = getMenuCameraCFrame(0, segmentIndex)
+
 	-- Lock camera every frame and pan
 	if cameraConnection then
 		cameraConnection:Disconnect()
@@ -145,29 +166,30 @@ local function startMenuCamera()
 		if menuOpen then
 			Camera.CameraType = Enum.CameraType.Scriptable
 			Camera.FieldOfView = CAMERA_FOV
-			
+
 			-- Calculate pan progress (0 to 1 over PAN_DURATION)
 			local elapsed = tick() - startTime
 			local alpha = math.min(elapsed / PAN_DURATION, 1)
-			
+
 			-- Initial fade in at the very start
 			if needsFadeIn and fadeOverlay then
 				needsFadeIn = false
 				initialFadeIn()
 			end
-			
+
 			-- Start fade transition near end of cycle (at 90%)
 			if alpha >= 0.9 and not hasFadedOut then
 				hasFadedOut = true
 				doFadeTransition(function()
-					-- Reset when screen is fully black
+					-- Advance to next segment when screen is fully black
+					segmentIndex = (segmentIndex % #CAMERA_SEGMENTS) + 1
 					startTime = tick()
 					hasFadedOut = false
-					Camera.CFrame = getMenuCameraCFrame(0)
+					Camera.CFrame = getMenuCameraCFrame(0, segmentIndex)
 				end)
 			end
-			
-			Camera.CFrame = getMenuCameraCFrame(alpha)
+
+			Camera.CFrame = getMenuCameraCFrame(alpha, segmentIndex)
 		end
 	end)
 end
