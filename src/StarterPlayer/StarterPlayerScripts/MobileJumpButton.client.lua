@@ -40,8 +40,9 @@ local function setupCharacter(char)
 	local jumpButton = Instance.new("TextButton")
 	jumpButton.Name = "JumpButton"
 	jumpButton.Text = "JUMP"
-	jumpButton.Size = UDim2.new(0, 120, 0, 120)
-	jumpButton.Position = UDim2.new(1, -130, 1, -130)
+	-- make the button slightly smaller for mobile
+	jumpButton.Size = UDim2.new(0, 80, 0, 80)
+	jumpButton.Position = UDim2.new(1, -100, 1, -120)
 	jumpButton.AnchorPoint = Vector2.new(0, 0)
 	jumpButton.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 	jumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -55,8 +56,11 @@ local function setupCharacter(char)
 	corner.Parent = jumpButton
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(50, 100, 150)
-	stroke.Thickness = 3
+	-- Dark-blue border matching other UI
+	stroke.Color = Color3.fromRGB(10, 60, 150)
+	stroke.Thickness = 4
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.ZIndex = jumpButton.ZIndex + 1
 	stroke.Parent = jumpButton
 
 	jumpButton.MouseButton1Down:Connect(function()
