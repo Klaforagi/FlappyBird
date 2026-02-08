@@ -1,68 +1,133 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local biomeFolder = workspace:WaitForChild("Biome")
-local skyboxFolder = ReplicatedStorage:WaitForChild("Skybox")
 
-local currentBiome = nil
+-- Zone definitions (X coordinate ranges)
+local Zones = {
+	{ name = "Green Meadows", xMin = nil,        xMax = 1360.450, id = 1 },
+	{ name = "Sunny Beach",   xMin = 1360.451,   xMax = 2982.672, id = 2 },
+	{ name = "Sakura Fields", xMin = 2982.673,   xMax = 4648.372, id = 3 },
+}
 
--- Get the biome number from part name
-local function getBiomeNumber(partName)
-	local num = tonumber(partName)
-	return num
-end
+local currentZone = nil
 
--- Change skybox to match biome number
-local function changeSkybox(biomeNum)
-	if currentBiome == biomeNum then return end
-	currentBiome = biomeNum
-	
-	-- Find the matching skybox
-	local skyboxName = tostring(biomeNum)
-	local skybox = skyboxFolder:FindFirstChild(skyboxName)
-	
-	if not skybox then
-		warn("Skybox not found for biome:", biomeNum)
+-- Apply skybox by zone id (tries numeric id first, then name)
+local function changeSkyboxById(biomeIdOrName)
+	if currentZone and (currentZone.id == biomeIdOrName or currentZone.name == biomeIdOrName) then
 		return
 	end
-	
-	-- Clear existing skybox
+
+	local skyboxFolder = ReplicatedStorage:FindFirstChild("Skybox")
+	if not skyboxFolder then
+		warn("Skybox folder missing in ReplicatedStorage")
+		return
+	end
+
+	local skyboxObj = skyboxFolder:FindFirstChild(tostring(biomeIdOrName)) or skyboxFolder:FindFirstChild(biomeIdOrName)
+	if not skyboxObj then
+		warn("Skybox not found for id/name:", biomeIdOrName)
+		return
+	end
+
 	for _, obj in ipairs(Lighting:GetChildren()) do
 		if obj:IsA("Sky") then
 			obj:Destroy()
 		end
 	end
-	
-	-- Clone and apply new skybox
-	local newSky = skybox:Clone()
+
+	local newSky = skyboxObj:Clone()
 	newSky.Parent = Lighting
 end
 
--- Setup biome checker
-local function setupBiomeChecker(part)
-	local biomeNum = getBiomeNumber(part.Name)
-	if not biomeNum then return end
-	
-	part.Touched:Connect(function(hit)
-		local char = LocalPlayer.Character
-		if char and hit:IsDescendantOf(char) then
-			changeSkybox(biomeNum)
+local function getZoneForX(x)
+	for _, z in ipairs(Zones) do
+		local minOk = (not z.xMin) or (x >= z.xMin)
+		local maxOk = (not z.xMax) or (x <= z.xMax)
+		if minOk and maxOk then
+			return z
+		end
+	end
+	return nil
+end
+
+-- Debug label in bottom-left
+local function createZoneLabel()
+	local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+	local existing = playerGui:FindFirstChild("ZoneDebugGui")
+	if existing then
+		return existing:FindFirstChild("ZoneLabel")
+	end
+
+	local screen = Instance.new("ScreenGui")
+	screen.Name = "ZoneDebugGui"
+	screen.ResetOnSpawn = false
+	screen.Parent = playerGui
+
+	local label = Instance.new("TextLabel")
+	label.Name = "ZoneLabel"
+	label.AnchorPoint = Vector2.new(0, 1)
+	label.Position = UDim2.new(0.02, 0, 0.95, 0)
+	label.Size = UDim2.new(0.22, 0, 0.04, 0)
+	label.BackgroundTransparency = 0.45
+	label.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+	label.BorderSizePixel = 0
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextScaled = true
+	label.Font = Enum.Font.SourceSansBold
+	label.Text = "Zone: --"
+	label.Parent = screen
+
+	return label
+end
+
+local zoneLabel = createZoneLabel()
+
+local function monitorCharacter(char)
+	local hrp = char:WaitForChild("HumanoidRootPart", 5)
+	if not hrp then return end
+
+	local lastZone = nil
+	lastZone = getZoneForX(hrp.Position.X)
+	if lastZone then
+		zoneLabel.Text = lastZone.name
+		changeSkyboxById(lastZone.id or lastZone.name)
+		currentZone = lastZone
+	else
+		zoneLabel.Text = "Zone: --"
+	end
+
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		if not hrp.Parent then
+			conn:Disconnect()
+			return
+		end
+		local x = hrp.Position.X
+		local z = getZoneForX(x)
+		if z then
+			if not lastZone or lastZone.name ~= z.name then
+				zoneLabel.Text = z.name
+				changeSkyboxById(z.id or z.name)
+				currentZone = z
+				lastZone = z
+			end
+		else
+			if lastZone ~= nil then
+				zoneLabel.Text = "Zone: --"
+				lastZone = nil
+				currentZone = nil
+			end
 		end
 	end)
 end
 
--- Initialize all biome checkers
-for _, part in ipairs(biomeFolder:GetChildren()) do
-	if part:IsA("BasePart") then
-		setupBiomeChecker(part)
-	end
-end
-
--- Handle new biome checkers added
-biomeFolder.ChildAdded:Connect(function(child)
-	if child:IsA("BasePart") then
-		setupBiomeChecker(child)
-	end
+LocalPlayer.CharacterAdded:Connect(function(char)
+	monitorCharacter(char)
 end)
+
+if LocalPlayer.Character then
+	monitorCharacter(LocalPlayer.Character)
+end

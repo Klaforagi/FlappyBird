@@ -17,6 +17,10 @@
       "Sounds": {
         "$className": "Folder"
       }
+      ,
+      "Trails": {
+        "$className": "Folder"
+      }
     },
 
     "ServerScriptService": {
