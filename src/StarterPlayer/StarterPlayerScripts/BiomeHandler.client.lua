@@ -86,27 +86,28 @@ end
 
 local zoneLabel = createZoneLabel()
 
-local function monitorCharacter(char)
-	local hrp = char:WaitForChild("HumanoidRootPart", 5)
-	if not hrp then return end
-
-	local lastZone = nil
-	lastZone = getZoneForX(hrp.Position.X)
-	if lastZone then
-		zoneLabel.Text = "Zone: " .. lastZone.name
-		changeSkyboxByName(lastZone.name)
-		currentZoneName = lastZone.name
-	else
-		zoneLabel.Text = "Zone: --"
+-- Monitor the camera's X position for zone detection (works in main menu and in-game)
+local cameraConn
+local function monitorCamera()
+	if cameraConn then
+		cameraConn:Disconnect()
+		cameraConn = nil
 	end
 
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		if not hrp.Parent then
-			conn:Disconnect()
-			return
-		end
-		local x = hrp.Position.X
+	local tries = 0
+	local cam = workspace.CurrentCamera
+	while not cam and tries < 100 do
+		cam = workspace.CurrentCamera
+		task.wait(0.02)
+		tries = tries + 1
+	end
+	if not cam then return end
+
+	local lastZone = nil
+	local function checkAndUpdate()
+		local c = workspace.CurrentCamera
+		if not c then return end
+		local x = c.CFrame.Position.X
 		local z = getZoneForX(x)
 		if z then
 			if not lastZone or lastZone.name ~= z.name then
@@ -122,13 +123,25 @@ local function monitorCharacter(char)
 				currentZoneName = nil
 			end
 		end
+	end
+
+	-- Initial update
+	checkAndUpdate()
+
+	cameraConn = RunService.RenderStepped:Connect(function()
+		checkAndUpdate()
 	end)
 end
 
-LocalPlayer.CharacterAdded:Connect(function(char)
-	monitorCharacter(char)
+-- Start monitoring immediately so skybox updates on main menu camera movement
+monitorCamera()
+
+-- Also restart monitoring if camera is recreated or player respawns
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+	monitorCamera()
 end)
 
-if LocalPlayer.Character then
-	monitorCharacter(LocalPlayer.Character)
-end
+LocalPlayer.CharacterAdded:Connect(function()
+	-- ensure camera monitor is active when character spawns
+	monitorCamera()
+end)
