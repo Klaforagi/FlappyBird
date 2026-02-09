@@ -136,6 +136,11 @@ local function isDeveloper()
 		end
 	end
 
+	-- Allow in Studio for testing
+	if runService:IsStudio() then
+		return true
+	end
+
 	-- Only allow developers listed in the DevList ModuleScript
 	return false
 end
