@@ -99,7 +99,8 @@ local function createZoneLabel()
 	local label = Instance.new("TextLabel")
 	label.Name = "ZoneLabel"
 	label.AnchorPoint = Vector2.new(0, 1)
-	label.Position = UDim2.new(0.02, 0, 0.95, 0)
+	-- Move label up by 5% of the screen (was 0.95)
+	label.Position = UDim2.new(0.02, 0, 0.90, 0)
 	label.Size = UDim2.new(0.22, 0, 0.04, 0)
 	label.BackgroundTransparency = 0.45
 	label.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
