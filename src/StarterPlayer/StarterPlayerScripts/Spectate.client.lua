@@ -203,8 +203,8 @@ local function stopSpectate()
 end
 
 spectateButton.MouseButton1Click:Connect(function()
-	-- Only allow spectating when NOT in FlappyMode
-	if flappyMode and flappyMode.Value then
+	-- Only allow spectating when NOT in FlappyMode or FlappyModeContinue
+	if (flappyMode and flappyMode.Value) or (flappyContinue and flappyContinue.Value) then
 		return
 	end
 	
@@ -266,8 +266,8 @@ end)
 
 -- Update UI visibility based on FlappyMode
 local function updateSpectateUI()
-	if flappyMode and flappyMode.Value then
-		-- In FlappyMode - hide spectate button and stop spectating
+	if flappyMode and flappyMode.Value or (flappyContinue and flappyContinue.Value) then
+		-- In FlappyMode or FlappyModeContinue - hide spectate button and stop spectating
 		spectateButton.Visible = false
 		if spectating then
 			spectating = false
@@ -284,7 +284,7 @@ local function updateSpectateUI()
 		end
 		bottomContainer.Visible = false
 	else
-		-- Not in FlappyMode - show spectate button if alive
+		-- Not in FlappyMode or FlappyModeContinue - show spectate button if alive
 		spectateButton.Visible = not spectating and (humanoid and humanoid.Health > 0)
 		if spectating then
 			updateNameLabel()
@@ -304,6 +304,17 @@ local function setupFlappyModeListener()
 	else
 		spectateButton.Visible = true
 	end
+	flappyContinue = char:FindFirstChild("FlappyModeContinue")
+	if flappyContinue then
+		flappyContinue.Changed:Connect(updateSpectateUI)
+	end
+	char.ChildAdded:Connect(function(child)
+		if child.Name == "FlappyModeContinue" and child:IsA("BoolValue") then
+			flappyContinue = child
+			flappyContinue.Changed:Connect(updateSpectateUI)
+			updateSpectateUI()
+		end
+	end)
 end
 
 setupFlappyModeListener()

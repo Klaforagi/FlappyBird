@@ -148,8 +148,17 @@ continueEvent.OnServerEvent:Connect(function(player, stageNum)
 			humanoid.PlatformStand = true
 		end
 		
+		-- Set FlappyModeContinue state
+		local flappyContinue = Instance.new("BoolValue")
+		flappyContinue.Name = "FlappyModeContinue"
+		flappyContinue.Value = true
+		flappyContinue.Parent = char
+		
 		-- 3 second pause
 		task.wait(3)
+		
+		-- End continue state
+		flappyContinue.Value = false
 		
 		-- Release player and enable flappy
 		if hrp and hrp.Parent then

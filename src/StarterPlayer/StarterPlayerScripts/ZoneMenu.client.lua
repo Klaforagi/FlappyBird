@@ -47,6 +47,20 @@ local function createMenuButton()
 	corner.CornerRadius = UDim.new(0,8)
 	corner.Parent = button
 
+	-- State label above the button
+	local stateLabel = Instance.new("TextLabel")
+	stateLabel.Name = "StateLabel"
+	stateLabel.Size = UDim2.new(0, 100, 0, 20)
+	stateLabel.Position = UDim2.new(0, 12, 0.5, -80)
+	stateLabel.AnchorPoint = Vector2.new(0, 0.5)
+	stateLabel.BackgroundTransparency = 0.5
+	stateLabel.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	stateLabel.TextColor3 = Color3.fromRGB(255,255,255)
+	stateLabel.Font = Enum.Font.SourceSansBold
+	stateLabel.TextScaled = true
+	stateLabel.Text = "Normal"
+	stateLabel.Parent = screenGui
+
 	-- Popup frame (hidden by default)
 	local popup = Instance.new("Frame")
 	popup.Name = "ZonePopup"
@@ -144,12 +158,28 @@ local function createMenuButton()
 	local inMainMenu = LocalPlayer:FindFirstChild("InMainMenu")
 	local flappyVal = nil
 	local humanoid = nil
+	local flappyContinueVal = nil
 
 	local function updateButtonState()
 		local inMenu = inMainMenu and inMainMenu.Value
 		local flappy = flappyVal and flappyVal.Value
 		local alive = humanoid and humanoid.Health > 0
-		if inMenu or flappy or not alive then
+		local flappyContinue = flappyContinueVal and flappyContinueVal.Value
+
+		-- Update state label
+		local stateText = "Normal"
+		if inMenu then
+			stateText = "Main Menu"
+		elseif not alive then
+			stateText = "Dead"
+		elseif flappyContinue then
+			stateText = "Continue"
+		elseif flappy then
+			stateText = "FlappyMode"
+		end
+		stateLabel.Text = stateText
+
+		if inMenu or flappy or not alive or flappyContinue then
 			button.Visible = false
 			button:SetAttribute("Enabled", false)
 			popup.Visible = false
@@ -167,13 +197,30 @@ local function createMenuButton()
 
 	-- Monitor FlappyMode on character
 	local function bindFlappyForCharacter(char)
-		flappyVal = char:WaitForChild("FlappyMode", 10)
+		flappyVal = char:FindFirstChild("FlappyMode")
 		if flappyVal and flappyVal:IsA("BoolValue") then
 			flappyVal.Changed:Connect(updateButtonState)
 		end
+		char.ChildAdded:Connect(function(child)
+			if child.Name == "FlappyMode" and child:IsA("BoolValue") then
+				flappyVal = child
+				flappyVal.Changed:Connect(updateButtonState)
+				updateButtonState()
+			end
+		end)
 		humanoid = char:WaitForChild("Humanoid")
 		humanoid.HealthChanged:Connect(updateButtonState)
-		updateButtonState()
+		flappyContinueVal = char:FindFirstChild("FlappyModeContinue")
+		if flappyContinueVal and flappyContinueVal:IsA("BoolValue") then
+			flappyContinueVal.Changed:Connect(updateButtonState)
+		end
+		char.ChildAdded:Connect(function(child)
+			if child.Name == "FlappyModeContinue" and child:IsA("BoolValue") then
+				flappyContinueVal = child
+				flappyContinueVal.Changed:Connect(updateButtonState)
+				updateButtonState()
+			end
+		end)		updateButtonState()
 	end
 
 	if LocalPlayer.Character then

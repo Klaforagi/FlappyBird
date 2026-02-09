@@ -127,6 +127,15 @@ local function createDeathMenu()
 	respawnButton.MouseButton1Click:Connect(function()
 		screenGui.Enabled = false
 		RespawnEvent:FireServer()
+
+		-- Force state label to Normal on restart
+		local zoneGui = PlayerGui:FindFirstChild("ZoneMenuGui")
+		if zoneGui then
+			local stateLabel = zoneGui:FindFirstChild("StateLabel")
+			if stateLabel then
+				stateLabel.Text = "Normal"
+			end
+		end
 	end)
 	
 	-- Continue button (right side)
