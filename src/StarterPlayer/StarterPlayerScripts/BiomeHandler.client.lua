@@ -10,9 +10,38 @@ local Zones = {
 	{ name = "Green Meadows", xMin = nil,        xMax = 1360.450, id = 1 },
 	{ name = "Sunny Beach",   xMin = 1360.451,   xMax = 2982.672, id = 2 },
 	{ name = "Sakura Fields", xMin = 2982.673,   xMax = 4648.372, id = 3 },
+	{ name = "Snowland",      xMin = 4648.373,   xMax = 6309.000, id = 4 },
+	{ name = "Haunted Woods", xMin = 6309.001,   xMax = 7971.000, id = 5 },
 }
 
 local currentZoneName = nil
+
+-- Preload skybox textures so transitions are smooth
+local ContentProvider = game:GetService("ContentProvider")
+local function preloadSkyboxes()
+	local skyboxFolder = ReplicatedStorage:FindFirstChild("Skybox")
+	if not skyboxFolder then return end
+	local assets = {}
+	for _, sky in ipairs(skyboxFolder:GetChildren()) do
+		if sky:IsA("Sky") then
+			for _, prop in ipairs({"SkyboxBk","SkyboxDn","SkyboxFt","SkyboxLf","SkyboxRt","SkyboxUp"}) do
+				local val = sky[prop]
+				if val and type(val) == "string" and val ~= "" then
+					table.insert(assets, val)
+				end
+			end
+		end
+	end
+	if #assets > 0 then
+		task.spawn(function()
+			pcall(function()
+				ContentProvider:PreloadAsync(assets)
+			end)
+		end)
+	end
+end
+
+preloadSkyboxes()
 
 -- Apply skybox by zone name (expects Skybox children to be named the same as zone names)
 local function changeSkyboxByName(biomeName)

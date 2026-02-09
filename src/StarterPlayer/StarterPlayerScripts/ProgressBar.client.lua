@@ -93,8 +93,8 @@ local segmentColors = {
 	Color3.fromRGB(0, 200, 100),   -- 0-50: green
 	Color3.fromRGB(50, 150, 255),  -- 50-100: blue
 	Color3.fromRGB(255, 100, 200), -- 100-150: pink
-	Color3.fromRGB(40, 40, 40),    -- 150-200: black
-	Color3.fromRGB(40, 40, 40),    -- 200-250: black
+	Color3.fromRGB(245, 250, 255), -- 150-200: very light bluish white
+	Color3.fromRGB(88, 24, 135),   -- 200-250: purple/indigo
 	Color3.fromRGB(40, 40, 40),    -- 250-300: black
 	Color3.fromRGB(40, 40, 40),    -- 300-350: black
 	Color3.fromRGB(40, 40, 40),    -- 350-400: black

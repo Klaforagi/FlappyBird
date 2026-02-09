@@ -12,6 +12,8 @@ local StageNameMap = {
 	{min = 0, max = 49, name = "Green Meadows"},
 	{min = 50, max = 99, name = "Sunny Beach"},
 	{min = 100, max = 149, name = "Sakura Fields"},
+	{min = 150, max = 199, name = "Snowlands"},
+	{min = 200, max = 249, name = "Haunted Woods"},
 }
 
 local function getStageName(stage)
