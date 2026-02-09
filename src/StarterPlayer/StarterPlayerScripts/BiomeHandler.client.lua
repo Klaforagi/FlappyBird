@@ -12,11 +12,11 @@ local Zones = {
 	{ name = "Sakura Fields", xMin = 2982.673,   xMax = 4648.372, id = 3 },
 }
 
-local currentZone = nil
+local currentZoneName = nil
 
--- Apply skybox by zone id (tries numeric id first, then name)
-local function changeSkyboxById(biomeIdOrName)
-	if currentZone and (currentZone.id == biomeIdOrName or currentZone.name == biomeIdOrName) then
+-- Apply skybox by zone name (expects Skybox children to be named the same as zone names)
+local function changeSkyboxByName(biomeName)
+	if currentZoneName == biomeName then
 		return
 	end
 
@@ -26,9 +26,9 @@ local function changeSkyboxById(biomeIdOrName)
 		return
 	end
 
-	local skyboxObj = skyboxFolder:FindFirstChild(tostring(biomeIdOrName)) or skyboxFolder:FindFirstChild(biomeIdOrName)
+	local skyboxObj = skyboxFolder:FindFirstChild(biomeName)
 	if not skyboxObj then
-		warn("Skybox not found for id/name:", biomeIdOrName)
+		warn("Skybox not found for name:", biomeName)
 		return
 	end
 
@@ -40,6 +40,7 @@ local function changeSkyboxById(biomeIdOrName)
 
 	local newSky = skyboxObj:Clone()
 	newSky.Parent = Lighting
+	currentZoneName = biomeName
 end
 
 local function getZoneForX(x)
@@ -92,9 +93,9 @@ local function monitorCharacter(char)
 	local lastZone = nil
 	lastZone = getZoneForX(hrp.Position.X)
 	if lastZone then
-		zoneLabel.Text = lastZone.name
-		changeSkyboxById(lastZone.id or lastZone.name)
-		currentZone = lastZone
+		zoneLabel.Text = "Zone: " .. lastZone.name
+		changeSkyboxByName(lastZone.name)
+		currentZoneName = lastZone.name
 	else
 		zoneLabel.Text = "Zone: --"
 	end
@@ -109,16 +110,16 @@ local function monitorCharacter(char)
 		local z = getZoneForX(x)
 		if z then
 			if not lastZone or lastZone.name ~= z.name then
-				zoneLabel.Text = z.name
-				changeSkyboxById(z.id or z.name)
-				currentZone = z
+				zoneLabel.Text = "Zone: " .. z.name
+				changeSkyboxByName(z.name)
+				currentZoneName = z.name
 				lastZone = z
 			end
 		else
 			if lastZone ~= nil then
 				zoneLabel.Text = "Zone: --"
 				lastZone = nil
-				currentZone = nil
+				currentZoneName = nil
 			end
 		end
 	end)

@@ -1,6 +1,8 @@
 local player = game.Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local runService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local lastStartIn, lastBreakIn = false, false
 
@@ -94,6 +96,57 @@ local function connectZoneDetection(char)
 			end
 		end
 		lastBreakIn = inBreak
+	end)
+end
+
+-- Dev helper: press F to enable FlappyMode on your current character (for testing)
+local function toggleFlappyForPlayer()
+	local char = player.Character
+	if not char then return end
+	local flappy = char:FindFirstChild("FlappyMode")
+	if not flappy then
+		flappy = Instance.new("BoolValue")
+		flappy.Name = "FlappyMode"
+		flappy.Value = true
+		flappy.Parent = char
+		print("FlappyMode ENABLED (dev key)")
+		return
+	end
+
+	flappy.Value = not flappy.Value
+	if flappy.Value then
+		print("FlappyMode ENABLED (dev key)")
+	else
+		print("FlappyMode DISABLED (dev key)")
+	end
+end
+
+-- Developer check: allow only certain user IDs to use the dev key.
+local function isDeveloper()
+	-- Look for a ModuleScript in ReplicatedStorage named 'DevList' or 'DevConfig' that returns a table of userIds
+	local mod = ReplicatedStorage:FindFirstChild("DevList") or ReplicatedStorage:FindFirstChild("DevConfig")
+	if mod and mod:IsA("ModuleScript") then
+		local ok, list = pcall(require, mod)
+		if ok and type(list) == "table" then
+			-- support both array or map formats
+			if list[player.UserId] then return true end
+			for _, id in ipairs(list) do
+				if id == player.UserId then return true end
+			end
+		end
+	end
+
+	-- Only allow developers listed in the DevList ModuleScript
+	return false
+end
+
+local IS_DEV = isDeveloper()
+if IS_DEV then
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.F then
+			toggleFlappyForPlayer()
+		end
 	end)
 end
 
