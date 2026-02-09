@@ -284,8 +284,8 @@ local function updateSpectateUI()
 		end
 		bottomContainer.Visible = false
 	else
-		-- Not in FlappyMode - show spectate button
-		spectateButton.Visible = true
+		-- Not in FlappyMode - show spectate button if alive
+		spectateButton.Visible = not spectating and (humanoid and humanoid.Health > 0)
 		if spectating then
 			updateNameLabel()
 		end
@@ -295,6 +295,8 @@ end
 -- Wait for FlappyMode to exist
 local function setupFlappyModeListener()
 	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	humanoid = char:WaitForChild("Humanoid")
+	humanoid.HealthChanged:Connect(updateSpectateUI)
 	flappyMode = char:WaitForChild("FlappyMode", 10)
 	if flappyMode then
 		flappyMode.Changed:Connect(updateSpectateUI)
