@@ -3,43 +3,38 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local RunService = game:GetService("RunService")
 
+-- Remove all Tool instances from a player's Backpack and Character
+local function removeAllTools(player)
+    local function removeFromContainer(container)
+        if not container then return end
+        for _, item in ipairs(container:GetChildren()) do
+            if item:IsA("Tool") then
+                pcall(function() item:Destroy() end)
+            end
+        end
+    end
+
+    removeFromContainer(player:FindFirstChild("Backpack"))
+    if player.Character then
+        removeFromContainer(player.Character)
+    end
+end
+
 -- Server-side dev check: requires ReplicatedStorage.DevList (ModuleScript returning array of userIds)
 local function isDeveloper(player)
     local mod = ReplicatedStorage:FindFirstChild("DevList") or ReplicatedStorage:FindFirstChild("DevConfig")
     if mod and mod:IsA("ModuleScript") then
         local ok, list = pcall(require, mod)
         if ok and type(list) == "table" then
+            if list[player.UserId] then return true end
             for _, id in ipairs(list) do
                 if id == player.UserId then
                     return true
-                        -- Aggressively remove all tools for non-devs (handles Studio auto-copy timing)
-                        task.spawn(function()
-                            local backpack = player:FindFirstChild("Backpack") or player:WaitForChild("Backpack")
-                            -- immediate removal
-                            removeAllTools(player)
-                            -- extra delayed attempts to catch engine/autocopy timing in Studio
-                            task.delay(0.1, function() removeAllTools(player) end)
-                            task.delay(1, function() removeAllTools(player) end)
-                            task.delay(2, function() removeAllTools(player) end)
-
-                            if backpack then
-                                backpack.ChildAdded:Connect(function(child)
-                                    if child:IsA("Tool") then
-                                        pcall(function() child:Destroy() end)
-                                    end
-                                end)
-                            end
-
-                            player.CharacterAdded:Connect(function(char)
-                                -- remove any tools that spawn in character and watch future adds
-                                removeAllTools(player)
-                                char.ChildAdded:Connect(function(child)
-                                    if child:IsA("Tool") then
-                                        pcall(function() child:Destroy() end)
-                                    end
-                                end)
-                            end)
-                        end)
+                end
+            end
+        end
+    end
+    return false
 end
 
 -- Give dev tools to developer players by cloning from ServerStorage.DevTools
