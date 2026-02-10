@@ -12,6 +12,12 @@ local Zones = {
 	{ name = "Sakura Fields", xMin = 2982.673,   xMax = 4648.372 },
 	{ name = "Snowland",      xMin = 4648.373,   xMax = 6309.000 },
 	{ name = "Haunted Woods", xMin = 6309.001,   xMax = 7971.000 },
+	-- Additional zones (added below Haunted Woods)
+	{ name = "West Desert",   xMin = nil,        xMax = nil },
+	{ name = "Wild Jungle",   xMin = nil,        xMax = nil },
+	{ name = "Lavaland",      xMin = nil,        xMax = nil },
+	{ name = "Cyber City",    xMin = nil,        xMax = nil },
+	{ name = "Galaxy",        xMin = nil,        xMax = nil },
 }
 
 -- Ensure RemoteEvent exists (create client-side reference)
@@ -133,8 +139,8 @@ local function createMenuButton()
 
 	-- Placeholder frames for tabs
 	local trailsFrame = Instance.new("Frame")
-	trailsFrame.Size = UDim2.new(1, -40, 0.82, 0)
-	trailsFrame.Position = UDim2.new(0, 20, 0.12, 0)
+	trailsFrame.Size = UDim2.new(0.94, 0, 0.82, 0)
+	trailsFrame.Position = UDim2.new(0.03, 0, 0.12, 0)
 	trailsFrame.BackgroundTransparency = 1
 	trailsFrame.Visible = false
 	trailsFrame.Parent = nil -- will parent to contentFrame after it's created
@@ -150,8 +156,8 @@ local function createMenuButton()
 	trailsSoon.Parent = trailsFrame
 
 	local skinsFrame = Instance.new("Frame")
-	skinsFrame.Size = UDim2.new(1, -40, 0.82, 0)
-	skinsFrame.Position = UDim2.new(0, 20, 0.12, 0)
+	skinsFrame.Size = UDim2.new(0.94, 0, 0.82, 0)
+	skinsFrame.Position = UDim2.new(0.03, 0, 0.12, 0)
 	skinsFrame.BackgroundTransparency = 1
 	skinsFrame.Visible = false
 	skinsFrame.Parent = nil -- will parent to contentFrame after it's created
@@ -206,25 +212,17 @@ local function createMenuButton()
 	-- Content area (right side)
 	local contentFrame = Instance.new("Frame")
 	contentFrame.Name = "ContentFrame"
-	contentFrame.Size = UDim2.new(0.78, -40, 1, -20)
-	contentFrame.Position = UDim2.new(0.20, 20, 0.03, 0)
+	contentFrame.Size = UDim2.new(0.78, 0, 1, 0)
+	contentFrame.Position = UDim2.new(0.20, 0, 0.03, 0)
 	contentFrame.BackgroundTransparency = 1
 	contentFrame.Parent = popup
 
-	contentTitle = Instance.new("TextLabel")
-	contentTitle.Size = UDim2.new(1, -40, 0.09, 0)
-	contentTitle.Position = UDim2.new(0.03, 0, 0.03, 0)
-	contentTitle.BackgroundTransparency = 1
-	contentTitle.Text = "Zones"
-	contentTitle.TextColor3 = Color3.fromRGB(255,255,255)
-	contentTitle.Font = Enum.Font.FredokaOne
-	contentTitle.TextScaled = true
-	contentTitle.Parent = contentFrame
+	-- (Zones title removed per request)
 
 	-- Header for checkpoints column (over checkmarks/buy column)
 	checkpointHeader = Instance.new("TextLabel")
-	checkpointHeader.Size = UDim2.new(0.18, 0, 0.04, 0)
-	checkpointHeader.Position = UDim2.new(0.74, 0, 0.045, 0)
+	checkpointHeader.Size = UDim2.new(0.18, 0, 0.06, 0)
+	checkpointHeader.Position = UDim2.new(0.85, 0, 0.045, 0)
 	checkpointHeader.AnchorPoint = Vector2.new(0, 0)
 	checkpointHeader.BackgroundTransparency = 1
 	checkpointHeader.Text = "Checkpoints"
@@ -232,19 +230,37 @@ local function createMenuButton()
 	checkpointHeader.Font = Enum.Font.FredokaOne
 	checkpointHeader.TextScaled = true
 	checkpointHeader.Parent = contentFrame
+	local chkStroke = Instance.new("UIStroke")
+	chkStroke.Color = Color3.fromRGB(50,100,150)
+	chkStroke.Thickness = 2
+	chkStroke.Parent = checkpointHeader
 
-	buttonsContainer = Instance.new("Frame")
-	buttonsContainer.Size = UDim2.new(1, -40, 0.82, 0)
-	buttonsContainer.Position = UDim2.new(0, 20, 0.12, 0)
+	-- Use a ScrollingFrame so many zones fit inside the popup
+	buttonsContainer = Instance.new("ScrollingFrame")
+	buttonsContainer.Name = "ButtonsContainer"
+	buttonsContainer.Size = UDim2.new(0.94, 0, 0.82, 0)
+	buttonsContainer.Position = UDim2.new(0.03, 0, 0.12, 0)
 	buttonsContainer.BackgroundTransparency = 1
+	buttonsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	buttonsContainer.ScrollBarThickness = 8
+	buttonsContainer.ScrollBarImageColor3 = Color3.fromRGB(50,50,60)
+	buttonsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
 	buttonsContainer.Parent = contentFrame
 
 	local uiList = Instance.new("UIListLayout")
-	uiList.Padding = UDim.new(0, 8)
+	uiList.Padding = UDim.new(0.02, 0)
 	uiList.FillDirection = Enum.FillDirection.Vertical
-	uiList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	uiList.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	uiList.VerticalAlignment = Enum.VerticalAlignment.Top
 	uiList.Parent = buttonsContainer
+
+	-- Keep canvas size updated based on list content
+	local function updateCanvas()
+		local h = uiList.AbsoluteContentSize.Y
+		buttonsContainer.CanvasSize = UDim2.new(0, 0, 0, h + 0)
+	end
+	uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+	updateCanvas()
 
 	-- now that content controls exist, initialize tab visuals
 	updateTabVisuals()
@@ -262,18 +278,33 @@ local function createMenuButton()
 		skinsFrame.Parent = contentFrame
 	end
 
+	-- Theme colors for zones (matches progress bar order)
+	local zoneColors = {
+		Color3.fromRGB(100,200,100), -- green
+		Color3.fromRGB(100,180,255), -- blue
+		Color3.fromRGB(255,120,180), -- pink
+		Color3.fromRGB(245,245,250), -- white/light
+		Color3.fromRGB(150,100,255), -- purple
+		Color3.fromRGB(255,175, 60), -- West Desert (yellow-orange)
+		Color3.fromRGB(20,130,20),   -- Wild Jungle (dark green)
+		Color3.fromRGB(220,50,50),   -- Lavaland (red)
+		Color3.fromRGB(70,240,240),  -- Cyber City (cyan)
+		Color3.fromRGB(30,60,200),   -- Galaxy (deep blue)
+	}
+
 	-- Create a row per zone with separate buy button and status
-	for _, z in ipairs(Zones) do
+	for i, z in ipairs(Zones) do
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0.08, 0)
+		row.Size = UDim2.new(1, 0, 0.16, 0)
 		row.BackgroundTransparency = 1
 		row.Parent = buttonsContainer
 
 		local zoneBtn = Instance.new("TextButton")
 		zoneBtn.Name = "ZoneButton"
-		zoneBtn.Size = UDim2.new(0.60, 0, 1, 0)
+		zoneBtn.Size = UDim2.new(0.68, 0, 1, 0)
 		zoneBtn.Position = UDim2.new(0, 0, 0, 0)
-		zoneBtn.BackgroundColor3 = Color3.fromRGB(60,60,70)
+		-- apply theme color per-zone (fall back to default)
+		zoneBtn.BackgroundColor3 = zoneColors[i] or Color3.fromRGB(60,60,70)
 		zoneBtn.TextColor3 = Color3.fromRGB(255,255,255)
 		zoneBtn.Text = z.name
 		zoneBtn.Font = Enum.Font.SourceSansSemibold
@@ -306,7 +337,7 @@ local function createMenuButton()
 		local costLabel = Instance.new("TextLabel")
 		costLabel.Name = "CostLabel"
 		costLabel.Size = UDim2.new(0.14, 0, 1, 0)
-		costLabel.Position = UDim2.new(0.62, 0, 0, 0)
+		costLabel.Position = UDim2.new(0.72, 0, 0, 0)
 		costLabel.BackgroundTransparency = 1
 		costLabel.Text = tostring(CHECKPOINT_COST) .. "c"
 		costLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
@@ -317,7 +348,7 @@ local function createMenuButton()
 		local buyBtn = Instance.new("TextButton")
 		buyBtn.Name = "BuyButton"
 		buyBtn.Size = UDim2.new(0.18, 0, 1, 0)
-		buyBtn.Position = UDim2.new(0.76, 0, 0, 0)
+		buyBtn.Position = UDim2.new(0.86, 0, 0, 0)
 		buyBtn.BackgroundColor3 = Color3.fromRGB(100,180,255)
 		buyBtn.Text = "Buy"
 		buyBtn.Font = Enum.Font.SourceSansSemibold
@@ -347,15 +378,14 @@ local function createMenuButton()
 		buyGrad.Rotation = 90
 		buyGrad.Parent = buyBtn
 
+		-- checkmark hidden (we no longer show the green tick)
 		local check = Instance.new("TextLabel")
 		check.Name = "CheckLabel"
 		check.Size = UDim2.new(0.08, 0, 1, 0)
 		check.Position = UDim2.new(0.96, 0, 0, 0)
 		check.BackgroundTransparency = 1
 		check.Text = ""
-		check.TextColor3 = Color3.fromRGB(100, 255, 100)
-		check.Font = Enum.Font.SourceSansBold
-		check.TextScaled = true
+		check.Visible = false
 		check.Parent = row
 		check.ZIndex = 102
 
@@ -424,8 +454,9 @@ local function createMenuButton()
 	-- Reset Owned button for testing (client-side only)
 	resetBtn = Instance.new("TextButton")
 	resetBtn.Name = "ResetOwned"
-	resetBtn.Size = UDim2.new(0, 120, 0, 28)
-	resetBtn.Position = UDim2.new(0, 20, 0, 56)
+	resetBtn.Size = UDim2.new(0.12, 0, 0.04, 0)
+	resetBtn.AnchorPoint = Vector2.new(1, 0)
+	resetBtn.Position = UDim2.new(1, -12, 0.01, 0)
 	resetBtn.BackgroundColor3 = Color3.fromRGB(180,80,80)
 	resetBtn.Text = "Reset Owned"
 	resetBtn.Font = Enum.Font.SourceSansSemibold
@@ -468,11 +499,11 @@ local function createMenuButton()
 		task.delay(2, function() if notice then notice:Destroy() end end)
 	end)
 
-	-- Close button
+	-- Close button (scaled and top-right inside popup)
 	local closeBtn = Instance.new("TextButton")
-	closeBtn.Size = UDim2.new(0, 36, 0, 36)
-	closeBtn.Position = UDim2.new(1, -48, 0, 16)
+	closeBtn.Size = UDim2.new(0.06, 0, 0.06, 0)
 	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.Position = UDim2.new(1, -12, 0.02, 0)
 	closeBtn.BackgroundColor3 = Color3.fromRGB(100,180,255)
 	closeBtn.Text = "X"
 	closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
