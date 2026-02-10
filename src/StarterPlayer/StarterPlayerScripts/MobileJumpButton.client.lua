@@ -39,7 +39,7 @@ local function setupCharacter(char)
 
 	local jumpButton = Instance.new("TextButton")
 	jumpButton.Name = "JumpButton"
-	jumpButton.Text = "JUMP"
+	jumpButton.Text = "FLAP"
 	-- make the button slightly smaller for mobile
 	jumpButton.Size = UDim2.new(0, 80, 0, 80)
 	jumpButton.Position = UDim2.new(1, -100, 1, -120)

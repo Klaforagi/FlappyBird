@@ -140,7 +140,7 @@ local function createMenuButton()
 	-- Placeholder frames for tabs
 	local trailsFrame = Instance.new("Frame")
 	trailsFrame.Size = UDim2.new(0.94, 0, 0.82, 0)
-	trailsFrame.Position = UDim2.new(0.03, 0, 0.12, 0)
+	trailsFrame.Position = UDim2.new(0, 0, 0.12, 0)
 	trailsFrame.BackgroundTransparency = 1
 	trailsFrame.Visible = false
 	trailsFrame.Parent = nil -- will parent to contentFrame after it's created
@@ -157,7 +157,7 @@ local function createMenuButton()
 
 	local skinsFrame = Instance.new("Frame")
 	skinsFrame.Size = UDim2.new(0.94, 0, 0.82, 0)
-	skinsFrame.Position = UDim2.new(0.03, 0, 0.12, 0)
+	skinsFrame.Position = UDim2.new(0, 0, 0.12, 0)
 	skinsFrame.BackgroundTransparency = 1
 	skinsFrame.Visible = false
 	skinsFrame.Parent = nil -- will parent to contentFrame after it's created
@@ -209,11 +209,11 @@ local function createMenuButton()
 
 	-- initial visuals will run after content area is built
 
-	-- Content area (right side)
+	-- Content area (uses more left space now)
 	local contentFrame = Instance.new("Frame")
 	contentFrame.Name = "ContentFrame"
-	contentFrame.Size = UDim2.new(0.78, 0, 1, 0)
-	contentFrame.Position = UDim2.new(0.20, 0, 0.03, 0)
+	contentFrame.Size = UDim2.new(0.90, 0, 1, 0)
+	contentFrame.Position = UDim2.new(0.05, 0, 0.03, 0)
 	contentFrame.BackgroundTransparency = 1
 	contentFrame.Parent = popup
 
@@ -221,8 +221,8 @@ local function createMenuButton()
 
 	-- Header for checkpoints column (over checkmarks/buy column)
 	checkpointHeader = Instance.new("TextLabel")
-	checkpointHeader.Size = UDim2.new(0.18, 0, 0.06, 0)
-	checkpointHeader.Position = UDim2.new(0.85, 0, 0.045, 0)
+	checkpointHeader.Size = UDim2.new(0.14, 0, 0.06, 0)
+	checkpointHeader.Position = UDim2.new(0.80, 0, 0.045, 0)
 	checkpointHeader.AnchorPoint = Vector2.new(0, 0)
 	checkpointHeader.BackgroundTransparency = 1
 	checkpointHeader.Text = "Checkpoints"
@@ -238,8 +238,8 @@ local function createMenuButton()
 	-- Use a ScrollingFrame so many zones fit inside the popup
 	buttonsContainer = Instance.new("ScrollingFrame")
 	buttonsContainer.Name = "ButtonsContainer"
-	buttonsContainer.Size = UDim2.new(0.94, 0, 0.82, 0)
-	buttonsContainer.Position = UDim2.new(0.03, 0, 0.12, 0)
+	buttonsContainer.Size = UDim2.new(1, 0, 0.82, 0)
+	buttonsContainer.Position = UDim2.new(0, 0, 0.12, 0)
 	buttonsContainer.BackgroundTransparency = 1
 	buttonsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	buttonsContainer.ScrollBarThickness = 8
@@ -301,7 +301,7 @@ local function createMenuButton()
 
 		local zoneBtn = Instance.new("TextButton")
 		zoneBtn.Name = "ZoneButton"
-		zoneBtn.Size = UDim2.new(0.68, 0, 1, 0)
+		zoneBtn.Size = UDim2.new(0.72, 0, 1, 0)
 		zoneBtn.Position = UDim2.new(0, 0, 0, 0)
 		-- apply theme color per-zone (fall back to default)
 		zoneBtn.BackgroundColor3 = zoneColors[i] or Color3.fromRGB(60,60,70)
@@ -336,8 +336,8 @@ local function createMenuButton()
 
 		local costLabel = Instance.new("TextLabel")
 		costLabel.Name = "CostLabel"
-		costLabel.Size = UDim2.new(0.14, 0, 1, 0)
-		costLabel.Position = UDim2.new(0.72, 0, 0, 0)
+		costLabel.Size = UDim2.new(0.12, 0, 1, 0)
+		costLabel.Position = UDim2.new(0.74, 0, 0, 0)
 		costLabel.BackgroundTransparency = 1
 		costLabel.Text = tostring(CHECKPOINT_COST) .. "c"
 		costLabel.TextColor3 = Color3.fromRGB(255, 223, 0)
@@ -347,7 +347,7 @@ local function createMenuButton()
 
 		local buyBtn = Instance.new("TextButton")
 		buyBtn.Name = "BuyButton"
-		buyBtn.Size = UDim2.new(0.18, 0, 1, 0)
+		buyBtn.Size = UDim2.new(0.12, 0, 1, 0)
 		buyBtn.Position = UDim2.new(0.86, 0, 0, 0)
 		buyBtn.BackgroundColor3 = Color3.fromRGB(100,180,255)
 		buyBtn.Text = "Buy"
@@ -436,11 +436,12 @@ local function createMenuButton()
 							if buyBtn then buyBtn.Text = "Owned"; buyBtn.BackgroundColor3 = Color3.fromRGB(120,120,120); buyBtn.Active = false end
 						else
 							if check then check.Text = "" end
-							if cost then cost.Visible = true end
 							if not firstUnownedFound then
+								if cost then cost.Visible = true end
 								if buyBtn then buyBtn.Text = "Buy"; buyBtn.BackgroundColor3 = Color3.fromRGB(100,180,255); buyBtn.Active = true end
 								firstUnownedFound = true
 							else
+								if cost then cost.Visible = false end
 								if buyBtn then buyBtn.Text = "Buy"; buyBtn.BackgroundColor3 = Color3.fromRGB(120,120,120); buyBtn.Active = false end
 							end
 						end
